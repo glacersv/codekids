@@ -1,0 +1,12 @@
+# Chrome temporary profiles and caches
+.chrome/
+.chrome-profile/
+.probe
+
+# System / OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Logs
+*.log
