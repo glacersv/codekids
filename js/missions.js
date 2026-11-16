@@ -167,6 +167,30 @@
       praise: 'Encontraste el patrón escondido. Eso es lo que hace un bucle.'
     }),
 
+    mk({
+      id: 'm11',
+      lesson: 'l2',
+      title: 'El gran circuito',
+      concept: 'Bucle',
+      goal: 'Recorre la pista, recoge las 5 estrellas y llega a la meta.',
+      learn: 'Un bucle largo ahorra decenas de bloques. En vez de 12 órdenes, sólo escribes 4 dentro de Repetir.',
+      tip: 'Chispa debe avanzar tres veces y girar a la derecha. ¿Cuántas veces hace eso?',
+      grid: ['......', '.R**..', '....*.', '....*.', '.F**..', '......'],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat'],
+      maxBlocks: 16,
+      solution: [
+        { type: 'repeat', times: 3, do: [
+          { type: 'move' }, { type: 'move' }, { type: 'move' }, { type: 'right' }
+        ]}
+      ],
+      hints: [
+        'Mira cada lado del circuito: son 3 pasos adelante y un giro a la derecha.',
+        'Pon ese paquete dentro de Repetir 3 veces.'
+      ],
+      praise: '¡Completaste el gran circuito con 5 bloques! Eso es aprovechar los bucles.'
+    }),
+
     /* ================= LECCIÓN 3 · Condicional ================= */
     mk({
       id: 'm7',
@@ -206,6 +230,33 @@
         'La primera pared la esquiva girando a la derecha. La segunda también.'
       ],
       praise: 'Una sola regla y dos esquinas resueltas. Eso es pensar con condiciones.'
+    }),
+
+    mk({
+      id: 'm12',
+      lesson: 'l3',
+      title: 'El laberinto de tres muros',
+      concept: 'Condicional',
+      goal: 'Hay tres muros en el camino. Una sola regla debe llevar a Chispa hasta el centro.',
+      learn: 'Un bucle con condicional puede recorrer cualquier camino delimitado por paredes, sin importar cuántos giros tenga.',
+      tip: 'Repite Avanzar y Si hay pared. La regla gira sola en cada pared.',
+      grid: [
+        '.......',
+        '.R.*.#.',
+        '..F..#.',
+        '.#*..#.',
+        '....#..',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat', 'ifwall'],
+      maxBlocks: 18,
+      solution: [{ type: 'repeat', times: 8, do: [{ type: 'move' }, { type: 'ifwall' }] }],
+      hints: [
+        'Pon Avanzar y Si hay pared dentro de un bloque Repetir.',
+        'Pon 8 repeticiones para que recorra todo el espiral hasta la bandera.'
+      ],
+      praise: '¡Tres esquinas superadas con una sola regla! Eso es programar con lógica.'
     }),
 
     /* ================= LECCIÓN 4 · Depuración ================= */

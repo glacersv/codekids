@@ -63,7 +63,7 @@
         ],
         note: 'Sin bucle harían falta cuatro bloques de Avanzar. Con bucle son dos. El resultado es el mismo.'
       },
-      retos: ['m4', 'm5', 'm8']
+      retos: ['m4', 'm5', 'm8', 'm11']
     },
 
     /* ==================== 3 ==================== */
@@ -88,7 +88,7 @@
         ],
         note: 'La primera vez no había pared y no giró. La segunda sí, y giró sola. Eso es una regla.'
       },
-      retos: ['m7', 'm9']
+      retos: ['m7', 'm9', 'm12']
     },
 
     /* ==================== 4 ==================== */
