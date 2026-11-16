@@ -302,6 +302,71 @@
         'Pulsa + en el bucle hasta que diga 4.'
       ],
       praise: 'Cambiaste un número y el programa funcionó. Eso es ajustar.'
+    }),
+
+    /* ================= LECCIÓN 5 · Desafío Final ================= */
+    mk({
+      id: 'm13',
+      lesson: 'l5',
+      title: 'La isla de las estrellas',
+      concept: 'Maestría',
+      goal: 'Recorre el camino alrededor de la isla, recoge las 4 estrellas y llega a la bandera.',
+      learn: 'Uniendo un bucle con una regla condicional puedes recorrer cualquier circuito cerrado con pocas líneas de código.',
+      tip: 'Usa Repetir con Avanzar y Si hay pared para girar en cada esquina.',
+      grid: [
+        '#######',
+        '#R*..*#',
+        '#.###.#',
+        '#F###*#',
+        '#*...*#',
+        '#######'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat', 'ifwall'],
+      maxBlocks: 18,
+      solution: [{ type: 'repeat', times: 12, do: [{ type: 'move' }, { type: 'ifwall' }] }],
+      hints: [
+        'Pon Avanzar y Si hay pared adentro de un bloque Repetir.',
+        'Pon el bucle en 12 repeticiones para que dé la vuelta entera a la isla.'
+      ],
+      praise: '¡Completaste la vuelta completa a la isla! Lógica pura de programación.'
+    }),
+
+    mk({
+      id: 'm14',
+      lesson: 'l5',
+      title: 'El giro invertido',
+      concept: 'Maestría',
+      goal: 'Alguien programó el robot con un giro al revés y choca. ¡Encuentra el fallo y arréglalo!',
+      learn: 'La maestría de un programador está en observar, entender la lógica y corregir el bloque exacto sin desesperar.',
+      tip: 'Ejecuta el programa para ver en qué dirección gira mal y cámbialo.',
+      grid: [
+        '.......',
+        '.R**...',
+        '....*..',
+        '....*..',
+        '.F**...',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat'],
+      maxBlocks: 16,
+      guided: true,
+      startProgram: [
+        { type: 'repeat', times: 3, do: [
+          { type: 'move' }, { type: 'move' }, { type: 'move' }, { type: 'left' }
+        ]}
+      ],
+      solution: [
+        { type: 'repeat', times: 3, do: [
+          { type: 'move' }, { type: 'move' }, { type: 'move' }, { type: 'right' }
+        ]}
+      ],
+      hints: [
+        'Chispa intenta girar a la izquierda y se sale del camino hacia arriba.',
+        'Cambia el bloque Girar izquierda por Girar derecha dentro del bucle.'
+      ],
+      praise: '¡Descubriste el bloque equivocado y salvaste a Chispa! ¡Eres todo un programador!'
     })
   ];
 

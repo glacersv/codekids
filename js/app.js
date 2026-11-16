@@ -250,7 +250,7 @@
      ================================================================== */
   function showView(name) {
     S.view = name;
-    ['home', 'lesson', 'mission', 'progress'].forEach(function (v) {
+    ['home', 'lesson', 'mission', 'progress', 'quiz'].forEach(function (v) {
       var node = document.getElementById('view-' + v);
       if (node) node.hidden = (v !== name);
     });
@@ -305,7 +305,7 @@
       h('div', { class: 'home__titles' }, [
         h('p', { class: 'eyebrow' }, 'CodeKids'),
         h('h1', {}, name ? ('Hola, ' + name + ' 👋') : '¡Hola! 👋'),
-        h('p', { class: 'home__sub' }, 'Cuatro lecciones. En cada una lees una idea, ves un ejemplo y resuelves retos. Al final sabrás explicar cómo empieza un programa.')
+        h('p', { class: 'home__sub' }, 'Cinco lecciones y zona de entrenamiento. En cada una lees una idea, ves un ejemplo y resuelves retos. Al final sabrás explicar cómo empieza un programa.')
       ])
     ]);
 
@@ -371,6 +371,7 @@
     });
 
     var foot = h('div', { class: 'home__foot' }, [
+      btn('🧩 Rompecabezas & Repaso', 'btn--primary', function () { renderQuiz(); showView('quiz'); }),
       btn('🎨 Zona libre', 'btn--soft', openFreePlay),
       btn('📊 Mi progreso', 'btn--soft', function () { renderProgress(); showView('progress'); }),
       btn('❓ Cómo se juega', 'btn--soft', openHowTo)
@@ -1730,6 +1731,202 @@
     ]));
   }
 
+  /* ==================================================================
+     REPASO & ROMPECABEZAS (QUIZ)
+     ================================================================== */
+  var QUIZ_QUESTIONS = [
+    {
+      type: 'puzzle',
+      title: 'Rompecabezas: El orden de la rutina',
+      desc: 'Coloca las acciones en el orden correcto en que las hace Chispa:',
+      pieces: [
+        { id: 'p1', text: '1. Leer la primera orden' },
+        { id: 'p2', text: '2. Avanzar hacia adelante' },
+        { id: 'p3', text: '3. Si hay pared, girar' },
+        { id: 'p4', text: '4. Llegar a la bandera con estrellas' }
+      ]
+    },
+    {
+      type: 'multiple',
+      question: '¿Qué hace Chispa cuando ejecuta un bloque de «Girar»?',
+      options: [
+        'Avanza un paso hacia adelante',
+        'Cambia la dirección hacia donde mira, pero no se mueve de celda',
+        'Recoge una estrella automáticamente'
+      ],
+      correct: 1,
+      explain: '¡Exacto! Girar sólo cambia su orientación (norte, sur, este u oeste), no cambia su posición.'
+    },
+    {
+      type: 'multiple',
+      question: 'Si quieres que Chispa avance 6 veces seguidas, ¿qué es mejor usar?',
+      options: [
+        'Poner 6 bloques de Avanzar uno tras otro',
+        'Un bloque de Repetir 6 veces con un Avanzar adentro',
+        'Un bloque de Si hay pared'
+      ],
+      correct: 1,
+      explain: '¡Muy bien! Un bucle te ahorra bloques: con 2 bloques haces el trabajo de 6.'
+    },
+    {
+      type: 'multiple',
+      question: '¿Para qué sirve el bloque «Si hay pared»?',
+      options: [
+        'Para romper las paredes y pasar a través de ellas',
+        'Para mirar adelante: si hay un muro gira sola, y si el camino está libre no hace nada',
+        'Para terminar el juego inmediatamente'
+      ],
+      correct: 1,
+      explain: '¡Correcto! Es una condición: evalúa el entorno antes de decidir si debe girar.'
+    },
+    {
+      type: 'multiple',
+      question: '¿Qué es "Depurar" (debugging) en programación?',
+      options: [
+        'Borrar todo el programa y empezar desde cero cada vez',
+        'Ejecutar, observar dónde falla y arreglar sólo lo que está mal',
+        'Poner muchos bloques al azar hasta que funcione'
+      ],
+      correct: 1,
+      explain: '¡Excelente! Los programadores leen el código, prueban y ajustan paso a paso.'
+    }
+  ];
+
+  var quizState = { current: 0, score: 0, answered: {} };
+
+  function renderQuiz() {
+    var host = $('#quiz-root');
+    if (!host) return;
+    clear(host);
+
+    var top = h('div', { class: 'topbar' }, [
+      backBtn(function () { showView('home'); renderHome(); }),
+      h('div', { class: 'topbar__mid' }, [
+        h('p', { class: 'eyebrow' }, 'Zona de Entrenamiento'),
+        h('h1', { class: 'topbar__title' }, 'Repaso y Rompecabezas')
+      ]),
+      h('div', { class: 'topbar__tools' }, [
+        iconBtn('🔄', 'Reiniciar repaso', function () {
+          quizState = { current: 0, score: 0, answered: {} };
+          Sound.tap();
+          renderQuiz();
+        })
+      ])
+    ]);
+
+    var q = QUIZ_QUESTIONS[quizState.current];
+    var card = h('div', { class: 'progress-card quiz-card' });
+
+    var progressText = h('p', { class: 'kicker' }, 'Pregunta ' + (quizState.current + 1) + ' de ' + QUIZ_QUESTIONS.length);
+    card.appendChild(progressText);
+
+    if (q.type === 'puzzle') {
+      card.appendChild(h('h2', { style: 'margin-bottom:8px' }, q.title));
+      card.appendChild(h('p', { class: 'read' }, q.desc));
+
+      var puzzleBox = h('div', { class: 'quiz-puzzle-box' });
+      q.pieces.forEach(function (p) {
+        puzzleBox.appendChild(h('div', { class: 'quiz-puzzle-item' }, [
+          h('span', { class: 'quiz-puzzle-badge' }, '🧩'),
+          h('b', {}, p.text)
+        ]));
+      });
+      card.appendChild(puzzleBox);
+
+      var checkBtn = h('button', { class: 'btn btn--primary', type: 'button', style: 'margin-top:16px' }, '¡Entendido! Siguiente →');
+      checkBtn.addEventListener('click', function () {
+        Sound.win();
+        quizState.score += 1;
+        quizState.current += 1;
+        renderQuiz();
+      });
+      card.appendChild(checkBtn);
+    } else {
+      card.appendChild(h('h2', { style: 'margin-bottom:12px' }, q.question));
+
+      var ansState = quizState.answered[quizState.current];
+      var optList = h('div', { class: 'quiz-options' });
+
+      q.options.forEach(function (opt, idx) {
+        var optBtn = h('button', {
+          class: 'btn btn--soft quiz-opt-btn',
+          type: 'button',
+          style: 'text-align:left;display:block;width:100%;margin-bottom:10px;padding:12px 16px;white-space:normal;line-height:1.4'
+        }, opt);
+
+        if (ansState !== undefined) {
+          optBtn.disabled = true;
+          if (idx === q.correct) {
+            optBtn.style.background = '#3FC1A0';
+            optBtn.style.color = '#FFFFFF';
+            optBtn.style.borderColor = '#2A9E81';
+          } else if (idx === ansState) {
+            optBtn.style.background = '#FF6B4A';
+            optBtn.style.color = '#FFFFFF';
+            optBtn.style.borderColor = '#E0522F';
+          }
+        } else {
+          optBtn.addEventListener('click', function () {
+            quizState.answered[quizState.current] = idx;
+            if (idx === q.correct) {
+              Sound.win();
+              quizState.score += 1;
+            } else {
+              Sound.bump();
+            }
+            renderQuiz();
+          });
+        }
+        optList.appendChild(optBtn);
+      });
+      card.appendChild(optList);
+
+      if (ansState !== undefined) {
+        var feedback = h('div', {
+          class: 'quiz-feedback',
+          style: 'margin-top:16px;padding:14px;border-radius:14px;background:' + (ansState === q.correct ? '#E8F8F3' : '#FFF0ED')
+        }, [
+          h('b', { style: 'display:block;margin-bottom:4px;color:' + (ansState === q.correct ? '#2A9E81' : '#E0522F') },
+            ansState === q.correct ? '🎉 ¡Correcto!' : '💡 Pista para recordar:'),
+          h('p', { style: 'margin:0;font-size:.9rem;color:#26232E' }, q.explain)
+        ]);
+        card.appendChild(feedback);
+
+        var nextBtn = h('button', { class: 'btn btn--primary', type: 'button', style: 'margin-top:16px' },
+          quizState.current + 1 < QUIZ_QUESTIONS.length ? 'Siguiente reto ›' : 'Ver resultado final 🏆');
+        nextBtn.addEventListener('click', function () {
+          Sound.tap();
+          quizState.current += 1;
+          renderQuiz();
+        });
+        card.appendChild(nextBtn);
+      }
+    }
+
+    if (quizState.current >= QUIZ_QUESTIONS.length) {
+      clear(card);
+      card.appendChild(h('h2', {}, '🎉 ¡Repaso completado!'));
+      card.appendChild(h('p', { class: 'read' }, 'Has respondido las preguntas sobre Secuencias, Bucles, Condicionales y Depuración.'));
+      card.appendChild(h('div', { style: 'font-size:1.5rem;font-weight:bold;margin:16px 0;color:#3FC1A0' },
+        'Puntuación: ' + quizState.score + ' de ' + QUIZ_QUESTIONS.length + ' aciertos ⭐'));
+
+      var actions = h('div', { class: 'modal__actions' }, [
+        btn('Repetir repaso', 'btn--soft', function () {
+          quizState = { current: 0, score: 0, answered: {} };
+          renderQuiz();
+        }),
+        btn('Volver al inicio', 'btn--primary', function () {
+          showView('home');
+          renderHome();
+        })
+      ]);
+      card.appendChild(actions);
+    }
+
+    host.appendChild(top);
+    host.appendChild(card);
+  }
+
   function switchRow(title, sub, value, onChange) {
     var sw = h('button', {
       class: 'switch', type: 'button', role: 'switch',
@@ -1770,6 +1967,7 @@
       return true;
     }
     if (key === 'progreso') { renderProgress(); showView('progress'); return true; }
+    if (key === 'repaso' || key === 'quiz') { renderQuiz(); showView('quiz'); return true; }
     if (key === 'libre') { openFreePlay(); return true; }
     return false;
   }

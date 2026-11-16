@@ -124,6 +124,31 @@
         fixNote: 'Ahora sí: con un solo giro llega a la bandera. Ese bloque era el que sobraba.'
       },
       retos: ['m6', 'm10']
+    },
+
+    /* ==================== 5 ==================== */
+    {
+      id: 'l5',
+      num: 5,
+      title: 'El Gran Desafío Final',
+      concept: 'Maestría',
+      idea: 'Un verdadero programador combina todo: secuencias, bucles, reglas y depuración para resolver cualquier misión.',
+      bullets: [
+        'Los bucles con condicionales resuelven caminos complejos con muy pocos bloques.',
+        'La depuración te permite analizar programas de otros y arreglarlos.',
+        '¡Ahora tienes todas las herramientas para pensar como un programador!'
+      ],
+      read: 'Has aprendido las cuatro bases de la programación: el orden de los pasos, la magia de no repetirte, las decisiones automáticas y el arte de encontrar y arreglar errores. En esta última lección pondrás a prueba todo tu ingenio.',
+      example: {
+        caption: 'Un bucle con condicional resuelve un recorrido con esquinas desconocidas.',
+        grid: ['......', '.R.*#.', '..F.#.', '...#..', '......'],
+        startDir: 'east',
+        program: [
+          { type: 'repeat', times: 4, do: [{ type: 'move' }, { type: 'ifwall' }] }
+        ],
+        note: 'Chispa avanza y si encuentra un muro gira a la derecha sola, recogiendo la estrella y llegando a la meta.'
+      },
+      retos: ['m13', 'm14']
     }
   ];
 
