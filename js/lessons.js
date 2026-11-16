@@ -38,7 +38,7 @@
         ],
         note: 'Fíjate en el orden: avanzó dos veces y después giró. Si hubiera girado antes, Chispa no llegaba.'
       },
-      retos: ['m1', 'm2', 'm3']
+      retos: ['m1', 'm2', 'm3', 'm15']
     },
 
     /* ==================== 2 ==================== */
@@ -123,7 +123,7 @@
         note: 'Chispa giró dos veces y terminó mirando a la pared. Por eso chocó.',
         fixNote: 'Ahora sí: con un solo giro llega a la bandera. Ese bloque era el que sobraba.'
       },
-      retos: ['m6', 'm10']
+      retos: ['m6', 'm10', 'm16']
     },
 
     /* ==================== 5 ==================== */
@@ -149,6 +149,33 @@
         note: 'Chispa avanza y si encuentra un muro gira a la derecha sola, recogiendo la estrella y llegando a la meta.'
       },
       retos: ['m13', 'm14']
+    },
+
+    /* ==================== ESPECIAL TEMPORADA ==================== */
+    {
+      id: 'l_season',
+      num: '❄️',
+      title: 'Festival de Invierno',
+      concept: 'Temporada Especial',
+      idea: '¡Nivel especial de temporada! Pon a prueba tus habilidades en la nieve con circuitos mágicos y castillos de hielo.',
+      bullets: [
+        'En los eventos de temporada se combinan todos tus poderes de programación.',
+        'Los recorridos nevados premian la precisión y la elegancia del código.',
+        '¡Consigue las estrellas invernales para completar el festival!'
+      ],
+      read: 'El invierno ha llegado a CodeKids y Chispa tiene una misión festiva: iluminar la plaza del pueblo nevado y abrir las puertas del castillo de hielo.',
+      example: {
+        caption: 'Un paseo en U alrededor de los abetos de nieve recogiendo estrellas.',
+        grid: ['.....', '.R*..', '...*.', '.F*..', '.....'],
+        startDir: 'east',
+        program: [
+          { type: 'move' }, { type: 'move' }, { type: 'right' },
+          { type: 'move' }, { type: 'move' }, { type: 'right' },
+          { type: 'move' }, { type: 'move' }
+        ],
+        note: 'Chispa esquiva los abetos nevados y recoge las estrellas de la fiesta.'
+      },
+      retos: ['s1', 's2']
     }
   ];
 

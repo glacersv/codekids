@@ -96,6 +96,36 @@
       praise: 'Recogiste la estrella y llegaste a la meta. Ya piensas en varios pasos.'
     }),
 
+    mk({
+      id: 'm15',
+      lesson: 'l1',
+      title: 'El gran zigzag',
+      concept: 'Secuencia',
+      goal: 'Recorre el camino en zigzag recogiendo las 4 estrellas hasta la bandera.',
+      learn: 'Una secuencia larga requiere planificar cada giro y paso con paciencia. ¡El orden exacto lo es todo!',
+      tip: 'Fíjate cuándo girar a la derecha y cuándo a la izquierda en cada escalón.',
+      grid: [
+        '......',
+        '.R*...',
+        '..**..',
+        '...*F.',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right'],
+      maxBlocks: 24,
+      solution: [
+        { type: 'move' }, { type: 'right' }, { type: 'move' },
+        { type: 'left' }, { type: 'move' }, { type: 'right' },
+        { type: 'move' }, { type: 'left' }, { type: 'move' }
+      ],
+      hints: [
+        'Avanza, gira a la derecha y avanza para bajar el primer escalón.',
+        'Luego gira a la izquierda y repite el mismo ritmo hasta llegar a la meta.'
+      ],
+      praise: '¡9 órdenes seguidas sin equivocarte! Dominas la secuencia al 100%.'
+    }),
+
     /* ================= LECCIÓN 2 · Bucle ================= */
     mk({
       id: 'm4',
@@ -304,6 +334,41 @@
       praise: 'Cambiaste un número y el programa funcionó. Eso es ajustar.'
     }),
 
+    mk({
+      id: 'm16',
+      lesson: 'l4',
+      title: 'El laberinto con errores',
+      concept: 'Depuración',
+      goal: 'El programa tiene un giro equivocado y faltan pasos. ¡Prueba, depura y llega a la meta!',
+      learn: 'Encontrar varios fallos en un programa requiere observar con calma paso a paso. ¡Gran trabajo de depuración!',
+      tip: 'Ejecuta el código actual y mira por qué Chispa gira hacia la pared.',
+      grid: [
+        '.....',
+        '.R*..',
+        '#..*.',
+        '.F*..',
+        '.....'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right'],
+      maxBlocks: 18,
+      guided: true,
+      startProgram: [
+        { type: 'move' }, { type: 'move' }, { type: 'left' },
+        { type: 'move' }, { type: 'move' }, { type: 'right' }
+      ],
+      solution: [
+        { type: 'move' }, { type: 'move' }, { type: 'right' },
+        { type: 'move' }, { type: 'move' }, { type: 'right' },
+        { type: 'move' }, { type: 'move' }
+      ],
+      hints: [
+        'Chispa debe bajar hacia la derecha, pero el programa le dice girar a la izquierda.',
+        'Cambia el giro a la izquierda por la derecha y añade los últimos pasos para recoger la estrella y llegar a F.'
+      ],
+      praise: '¡Corregiste múltiples errores y completaste la misión! Eres un detective del código.'
+    }),
+
     /* ================= LECCIÓN 5 · Desafío Final ================= */
     mk({
       id: 'm13',
@@ -367,6 +432,65 @@
         'Cambia el bloque Girar izquierda por Girar derecha dentro del bucle.'
       ],
       praise: '¡Descubriste el bloque equivocado y salvaste a Chispa! ¡Eres todo un programador!'
+    }),
+
+    /* ================= ESPECIAL DE TEMPORADA · Festival de Invierno ================= */
+    mk({
+      id: 's1',
+      lesson: 'l_season',
+      title: 'El Paseo Nevado',
+      concept: 'Temporada',
+      goal: 'Recorre la plaza del pueblo nevado, recoge las 6 estrellas brillantes y llega a la meta.',
+      learn: '¡Un recorrido festivo impecable! Los bucles coordinados te permiten hacer coreografías completas.',
+      tip: 'Chispa debe avanzar 4 pasos por cada lado y girar a la derecha.',
+      grid: [
+        '.......',
+        '.R*.**.',
+        '.....*.',
+        '.......',
+        '.....*.',
+        '.F*.**.',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat'],
+      maxBlocks: 16,
+      solution: [
+        { type: 'repeat', times: 3, do: [
+          { type: 'move' }, { type: 'move' }, { type: 'move' }, { type: 'move' }, { type: 'right' }
+        ]}
+      ],
+      hints: [
+        'Mira la distancia: son 4 pasos hacia adelante antes de doblar cada esquina.',
+        'Pon 4 bloques de Avanzar y un Girar derecha dentro de Repetir 3 veces.'
+      ],
+      praise: '¡Completaste el paseo nevado recogiendo todas las estrellas de la temporada!'
+    }),
+
+    mk({
+      id: 's2',
+      lesson: 'l_season',
+      title: 'El Castillo de Hielo',
+      concept: 'Temporada',
+      goal: 'Los bloques de hielo bloquean el camino. Usa una regla para esquivarlos y llegar a la corona.',
+      learn: 'Las reglas condicionales funcionan en cualquier terreno: en laberintos de piedra, en el espacio o en castillos de hielo.',
+      tip: 'Repite Avanzar y Si hay pared para que Chispa no choque con el hielo.',
+      grid: [
+        '......',
+        '.R*.#.',
+        '..F*.#',
+        '...#..',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat', 'ifwall'],
+      maxBlocks: 16,
+      solution: [{ type: 'repeat', times: 4, do: [{ type: 'move' }, { type: 'ifwall' }] }],
+      hints: [
+        'Pon Avanzar y Si hay pared dentro de Repetir.',
+        'Con 4 repeticiones, Chispa gira automáticamente en los bloques de hielo y entra a la meta.'
+      ],
+      praise: '¡Cruzaste el castillo de hielo usando la lógica pura de la programación! ❄️👑'
     })
   ];
 

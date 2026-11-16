@@ -349,14 +349,15 @@
     LESSONS.forEach(function (l) {
       var done = lessonProgress(l);
       var isNext = l.id === cl.id && !allDone;
+      var isSeason = l.id === 'l_season';
       var card = h('button', {
-        class: 'lesson-card' + (lessonDone(l) ? ' is-done' : '') + (isNext ? ' is-next' : ''),
+        class: 'lesson-card' + (lessonDone(l) ? ' is-done' : '') + (isNext ? ' is-next' : '') + (isSeason ? ' is-season' : ''),
         type: 'button',
         'aria-label': 'Lección ' + l.num + ': ' + l.title
       }, [
-        h('span', { class: 'lesson-card__num' }, lessonDone(l) ? '✓' : String(l.num)),
+        h('span', { class: 'lesson-card__num' + (isSeason ? ' is-season-badge' : '') }, lessonDone(l) ? '✓' : String(l.num)),
         h('div', { class: 'lesson-card__body' }, [
-          h('p', { class: 'lesson-card__kicker' }, l.concept),
+          h('p', { class: 'lesson-card__kicker' }, isSeason ? '❄️ Evento Especial' : l.concept),
           h('h3', { class: 'lesson-card__title' }, l.title),
           h('p', { class: 'lesson-card__idea' }, l.idea),
           h('div', { class: 'lesson-card__foot' }, [
@@ -408,7 +409,7 @@
     var top = h('div', { class: 'topbar' }, [
       backBtn(function () { showView('home'); renderHome(); }),
       h('div', { class: 'topbar__mid' }, [
-        h('p', { class: 'eyebrow' }, 'Lección ' + l.num + ' · ' + l.concept),
+        h('p', { class: 'eyebrow' }, (l.id === 'l_season' ? '❄️ Nivel de Temporada · ' : ('Lección ' + l.num + ' · ')) + l.concept),
         h('h1', { class: 'topbar__title' }, l.title)
       ]),
       h('div', { class: 'topbar__tools' }, [

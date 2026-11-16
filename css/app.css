@@ -1089,6 +1089,23 @@ body.calm .repeat.is-target { box-shadow: 0 0 0 2px var(--sun-d); }
 .lesson-card.is-done .lesson-card__num { background: #D6F5EA; border-color: #A9E0CD; color: #10624E; }
 .lesson-card.is-next .lesson-card__go { color: var(--coral); }
 
+.lesson-card.is-season {
+  background: linear-gradient(135deg, #F0F9FF 0%, #FFFFFF 100%);
+  border: 2.5px solid #5AA9E6;
+  box-shadow: 0 4px 14px rgba(90, 169, 230, .25);
+}
+.lesson-card.is-season .lesson-card__kicker {
+  color: #3B87C4;
+}
+.lesson-card.is-season .lesson-card__num.is-season-badge {
+  background: #5AA9E6;
+  border-color: #3B87C4;
+  color: #FFFFFF;
+}
+.lesson-card.is-season:hover {
+  border-color: #3B87C4;
+}
+
 /* =====================================================================
    15. LECCIÓN
    ===================================================================== */
