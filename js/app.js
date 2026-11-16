@@ -250,7 +250,7 @@
      ================================================================== */
   function showView(name) {
     S.view = name;
-    ['home', 'lesson', 'mission', 'progress', 'quiz'].forEach(function (v) {
+    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory'].forEach(function (v) {
       var node = document.getElementById('view-' + v);
       if (node) node.hidden = (v !== name);
     });
@@ -372,7 +372,8 @@
     });
 
     var foot = h('div', { class: 'home__foot' }, [
-      btn('🧩 Rompecabezas & Repaso', 'btn--primary', function () { renderQuiz(); showView('quiz'); }),
+      btn('📖 Teoría & Evaluación', 'btn--primary', function () { renderTheory(); showView('theory'); }),
+      btn('🧩 Rompecabezas & Repaso', 'btn--soft', function () { renderQuiz(); showView('quiz'); }),
       btn('🎨 Zona libre', 'btn--soft', openFreePlay),
       btn('📊 Mi progreso', 'btn--soft', function () { renderProgress(); showView('progress'); }),
       btn('❓ Cómo se juega', 'btn--soft', openHowTo)
@@ -1928,6 +1929,365 @@
     host.appendChild(card);
   }
 
+  /* ==================================================================
+     TEORÍA DE INTRODUCCIÓN A LA PROGRAMACIÓN Y EVALUACIÓN
+     ================================================================== */
+  var THEORY_TOPICS = [
+    {
+      title: '1. ¿Qué es un Algoritmo y qué es Programar?',
+      badge: 'Lógica Básica',
+      summary: 'Un programa es una receta de cocina muy precisa que una computadora sigue al pie de la letra.',
+      content: [
+        'Las computadoras y los robots como **Chispa** no tienen sentido común ni adivinan intenciones: sólo ejecutan instrucciones exactas en un orden determinado.',
+        'Un **Algoritmo** es un conjunto de pasos ordenados y finitos para resolver un problema (por ejemplo: levantarse, lavarse los dientes, vestirse y desayunar).',
+        '**Programar** es traducir ese algoritmo a un lenguaje que el robot o la máquina pueda entender y procesar sin equivocarse.'
+      ],
+      blockCorrelation: 'En CodeKids, cada bloque de color que arrastras representa una **instrucción única e indivisible** en el algoritmo de Chispa.'
+    },
+    {
+      title: '2. Estructura Secuencial (El orden importa)',
+      badge: 'Secuencia',
+      summary: 'Las instrucciones se ejecutan de arriba hacia abajo, una por una.',
+      content: [
+        'En la programación clásica, el orden cronológico define el resultado final.',
+        'Si alteras el orden de dos pasos (por ejemplo, ponerte los zapatos antes de los calcetines), el resultado falla aunque las dos órdenes existan.',
+        'En nuestro juego, si le pides a Chispa *Avanzar y luego Girar*, llegará a un lugar muy diferente que si le pides *Girar y luego Avanzar*.'
+      ],
+      blockCorrelation: 'Correlación de bloques: La columna de bloques apilados verticalmente representa exactamente el flujo secuencial de un programa real en Python o JavaScript.'
+    },
+    {
+      title: '3. Estructuras de Repetición (Bucles / Loops)',
+      badge: 'Bucles',
+      summary: 'Automatizar tareas repetitivas sin duplicar código inútilmente.',
+      content: [
+        'Uno de los principios de un buen programador es no repetirse (principio DRY: Don\'t Repeat Yourself).',
+        'Un **Bucle (Loop)** permite tomar una o varias instrucciones y ejecutarlas una cantidad determinada de veces (`for` loop) o mientras se cumpla una condición (`while` loop).',
+        'Ahorra memoria, hace el programa más corto, más legible y mucho más fácil de modificar.'
+      ],
+      blockCorrelation: 'Correlación de bloques: El bloque amarillo `Repetir N veces { ... }` encierra otras instrucciones dentro de su cuerpo, igual que las llaves `{ }` o la indentación en los lenguajes de texto profesionales.'
+    },
+    {
+      title: '4. Estructuras de Decisión (Condicionales)',
+      badge: 'Condicionales',
+      summary: 'Tomar decisiones inteligentes evaluando el estado del entorno.',
+      content: [
+        'Los programas no siempre siguen un camino fijo; necesitan reaccionar a cambios o eventos inesperados.',
+        'Un **Condicional (`if - else`)** evalúa una pregunta lógica (Verdadero o Falso). Si la condición es Verdadera, ejecuta una acción; si es Falsa, continúa o hace otra cosa.',
+        'Esto permite que el mismo código sirva para infinitos laberintos sin tener que programar cada paso de memoria.'
+      ],
+      blockCorrelation: 'Correlación de bloques: El bloque violeta `Si hay pared { girar }` consulta un sensor lógico antes de actuar. Es idéntico a una sentencia `if (sensor.hasWall()) robot.turnRight();`.'
+    },
+    {
+      title: '5. La Correlación: De Bloques a Código Real',
+      badge: 'Código Real',
+      summary: 'La programación visual por bloques utiliza los mismos conceptos que los lenguajes profesionales.',
+      content: [
+        'Lenguajes visuales como Scratch o Blockly funcionan con la misma arquitectura que lenguajes como Python, JavaScript, Java o C++.',
+        'Los bloques eliminan la frustración de equivocarse en la puntuación (puntos y comas, paréntesis), permitiendo que te concentres al 100% en la **lógica algorítmica**.',
+        'Una vez que dominas la lógica (Secuencia + Bucles + Condiciones), aprender la sintaxis escrita de cualquier lenguaje es pan comido.'
+      ],
+      blockCorrelation: 'Aprender a pensar en bloques entrena tu mente como ingeniero de software: abstraer problemas, dividirlos en piezas y depurar errores.'
+    }
+  ];
+
+  var THEORY_EVAL_QUESTIONS = [
+    {
+      topic: 'Lógica & Algoritmos',
+      question: '¿Qué es exactamente un "algoritmo" en informática?',
+      options: [
+        'Una pieza física dentro del robot',
+        'Una serie de pasos ordenados y finitos para resolver un problema o tarea',
+        'Un error que hace que el computador se apague'
+      ],
+      correct: 1,
+      explain: 'Un algoritmo es la receta lógica: una secuencia de pasos claros que resuelven una meta.'
+    },
+    {
+      topic: 'Estructuras de Control',
+      question: '¿Por qué en programación se usan bucles en vez de escribir la misma instrucción 100 veces?',
+      options: [
+        'Porque la computadora se cansa si ve muchas letras',
+        'Para evitar duplicar código, reducir errores y hacer el programa eficiente y legible',
+        'Porque los bucles hacen que el robot avance más rápido físicamente'
+      ],
+      correct: 1,
+      explain: 'Los bucles permiten reutilizar la lógica, ahorran espacio y facilitan el mantenimiento del código.'
+    },
+    {
+      topic: 'Condicionales & Lógica',
+      question: 'En la lógica de control, ¿cuándo se ejecuta el código dentro de un condicional `Si ...`?',
+      options: [
+        'Siempre se ejecuta, sin importar lo que pase',
+        'Únicamente cuando la condición evaluada resulta ser Verdadera (True)',
+        'Solo cuando el usuario presiona un botón rojo'
+      ],
+      correct: 1,
+      explain: 'El condicional inspecciona una condición; si es Verdadera actúa, si es Falsa se la salta.'
+    },
+    {
+      topic: 'Correlación Bloques vs Código',
+      question: '¿Qué ventaja principal tiene aprender lógica con bloques antes de escribir código en texto?',
+      options: [
+        'Permite enfocarse en la lógica computacional sin tropezar con errores de tipeo y sintaxis',
+        'Los bloques tienen más funciones que los lenguajes reales',
+        'Los bloques no usan matemáticas ni lógica'
+      ],
+      correct: 0,
+      explain: 'Los bloques enseñan las estructuras de control puras. La lógica aprendida es 100% transferible a Python, JavaScript o C++.'
+    },
+    {
+      topic: 'Secuencia & Flujo de Ejecución',
+      question: 'Si un programa tiene las órdenes: 1) Girar Derecha, 2) Avanzar, 3) Girar Derecha. ¿En qué orden las realiza la máquina?',
+      options: [
+        'Las hace todas al mismo tiempo en un milisegundo',
+        'En orden cronológico secuencial: paso 1, luego paso 2 y por último paso 3',
+        'Empieza por la última y termina por la primera'
+      ],
+      correct: 1,
+      explain: 'Las máquinas ejecutan los programas de forma secuencial, paso a paso, de arriba hacia abajo.'
+    },
+    {
+      topic: 'Depuración (Debugging)',
+      question: '¿Qué actitud define el pensamiento computacional al encontrar un fallo en el programa?',
+      options: [
+        'Borrar todo el código y abandonar la tarea',
+        'Rastrear la ejecución paso a paso para aislar la instrucción errónea y corregirla',
+        'Culpar a la computadora porque ella inventó el error'
+      ],
+      correct: 1,
+      explain: 'La depuración es un proceso analítico: seguir el rastro, encontrar la anomalía y corregirla con precisión.'
+    }
+  ];
+
+  var theoryState = {
+    tab: 'read', // 'read' | 'eval'
+    currentTopic: 0,
+    evalCurrent: 0,
+    evalScore: 0,
+    evalAnswers: {}
+  };
+
+  function renderTheory() {
+    var host = $('#theory-root');
+    if (!host) return;
+    clear(host);
+
+    var top = h('div', { class: 'topbar' }, [
+      backBtn(function () { showView('home'); renderHome(); }),
+      h('div', { class: 'topbar__mid' }, [
+        h('p', { class: 'eyebrow' }, 'Fundamentos Computacionales'),
+        h('h1', { class: 'topbar__title' }, 'Introducción a la Programación')
+      ]),
+      h('div', { class: 'topbar__tools' }, [
+        iconBtn('🔄', 'Reiniciar', function () {
+          theoryState = { tab: 'read', currentTopic: 0, evalCurrent: 0, evalScore: 0, evalAnswers: {} };
+          Sound.tap();
+          renderTheory();
+        })
+      ])
+    ]);
+
+    var tabs = h('div', { class: 'lesson-tabs', role: 'tablist' }, [
+      h('button', {
+        class: 'lesson-tab' + (theoryState.tab === 'read' ? ' is-active' : ''),
+        type: 'button',
+        onclick: function () { theoryState.tab = 'read'; Sound.tap(); renderTheory(); }
+      }, '📖 1. Conceptos y Teoría'),
+      h('button', {
+        class: 'lesson-tab' + (theoryState.tab === 'eval' ? ' is-active' : ''),
+        type: 'button',
+        onclick: function () { theoryState.tab = 'eval'; Sound.tap(); renderTheory(); }
+      }, '✍️ 2. Evaluación de Lógica (' + Object.keys(theoryState.evalAnswers).length + '/' + THEORY_EVAL_QUESTIONS.length + ')')
+    ]);
+
+    var content = h('div', { class: 'lesson-pane' });
+
+    if (theoryState.tab === 'read') {
+      content.appendChild(renderTheoryReading());
+    } else {
+      content.appendChild(renderTheoryEvaluation());
+    }
+
+    host.appendChild(top);
+    host.appendChild(tabs);
+    host.appendChild(content);
+  }
+
+  function renderTheoryReading() {
+    var pane = h('div', { class: 'lesson-pane__inner' });
+
+    var navList = h('div', {
+      style: 'display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;scrollbar-width:thin'
+    });
+
+    THEORY_TOPICS.forEach(function (t, idx) {
+      var active = theoryState.currentTopic === idx;
+      var btnTopic = h('button', {
+        class: 'btn ' + (active ? 'btn--primary' : 'btn--soft'),
+        style: 'flex:none;font-size:.82rem;padding:6px 14px;border-radius:999px',
+        type: 'button',
+        onclick: function () {
+          theoryState.currentTopic = idx;
+          Sound.tap();
+          renderTheory();
+        }
+      }, t.badge);
+      navList.appendChild(btnTopic);
+    });
+
+    pane.appendChild(navList);
+
+    var topic = THEORY_TOPICS[theoryState.currentTopic];
+    var card = h('div', { class: 'progress-card', style: 'padding:24px' }, [
+      h('p', { class: 'kicker' }, topic.badge),
+      h('h2', { style: 'font-size:1.35rem;margin:6px 0 12px;color:var(--ink)' }, topic.title),
+      h('p', { class: 'lead', style: 'font-weight:700;color:var(--coral);margin-bottom:16px' }, topic.summary)
+    ]);
+
+    topic.content.forEach(function (paragraph) {
+      var pElem = h('p', { class: 'read', style: 'margin-bottom:12px;line-height:1.6' });
+      pElem.innerHTML = paragraph.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+      card.appendChild(pElem);
+    });
+
+    var correlBox = h('div', {
+      style: 'margin-top:18px;padding:14px 18px;background:#EDFBF5;border-left:4px solid #3FC1A0;border-radius:8px'
+    }, [
+      h('b', { style: 'display:block;margin-bottom:4px;color:#10624E;font-size:.9rem' }, '🧩 Correlación con la programación visual:'),
+      h('p', { style: 'margin:0;font-size:.88rem;color:#26232E;line-height:1.5' }, topic.blockCorrelation)
+    ]);
+    card.appendChild(correlBox);
+
+    var ctaRow = h('div', { style: 'display:flex;gap:12px;margin-top:20px;flex-wrap:wrap' });
+
+    if (theoryState.currentTopic < THEORY_TOPICS.length - 1) {
+      ctaRow.appendChild(btn('Siguiente tema: ' + THEORY_TOPICS[theoryState.currentTopic + 1].badge + ' →', 'btn--soft', function () {
+        theoryState.currentTopic += 1;
+        renderTheory();
+      }));
+    }
+
+    ctaRow.appendChild(btn('Ir a la Evaluación de Lógica ✍️', 'btn--primary', function () {
+      theoryState.tab = 'eval';
+      renderTheory();
+    }));
+
+    card.appendChild(ctaRow);
+    pane.appendChild(card);
+    return pane;
+  }
+
+  function renderTheoryEvaluation() {
+    var pane = h('div', { class: 'lesson-pane__inner' });
+    var qIdx = theoryState.evalCurrent;
+    var q = THEORY_EVAL_QUESTIONS[qIdx];
+
+    var card = h('div', { class: 'progress-card quiz-card', style: 'padding:24px' });
+
+    if (qIdx >= THEORY_EVAL_QUESTIONS.length) {
+      card.appendChild(h('h2', { style: 'color:#3FC1A0;margin-bottom:8px' }, '🏆 ¡Evaluación Finalizada!'));
+      card.appendChild(h('p', { class: 'read' }, 'Has demostrado tus conocimientos sobre algoritmos, estructuras de control, condicionales y correlación de bloques.'));
+
+      var pct = Math.round((theoryState.evalScore / THEORY_EVAL_QUESTIONS.length) * 100);
+      var resultBadge = h('div', {
+        style: 'font-size:1.6rem;font-weight:900;margin:18px 0;padding:16px;background:#FFF7EC;border-radius:14px;border:2px solid var(--line);text-align:center;color:var(--ink)'
+      }, [
+        h('span', { style: 'display:block;font-size:1rem;color:var(--muted);font-weight:700;margin-bottom:4px' }, 'Calificación Obtenida:'),
+        theoryState.evalScore + ' de ' + THEORY_EVAL_QUESTIONS.length + ' aciertos (' + pct + '%) ' + (pct >= 80 ? '🌟 Sobresaliente' : '👍 Buen esfuerzo')
+      ]);
+      card.appendChild(resultBadge);
+
+      var actions = h('div', { class: 'modal__actions', style: 'margin-top:16px' }, [
+        btn('Repetir Evaluación', 'btn--soft', function () {
+          theoryState.evalCurrent = 0;
+          theoryState.evalScore = 0;
+          theoryState.evalAnswers = {};
+          renderTheory();
+        }),
+        btn('Repasar Teoría', 'btn--soft', function () {
+          theoryState.tab = 'read';
+          renderTheory();
+        }),
+        btn('Volver al Inicio', 'btn--primary', function () {
+          showView('home');
+          renderHome();
+        })
+      ]);
+      card.appendChild(actions);
+      pane.appendChild(card);
+      return pane;
+    }
+
+    card.appendChild(h('p', { class: 'kicker' }, 'Pregunta ' + (qIdx + 1) + ' de ' + THEORY_EVAL_QUESTIONS.length + ' · ' + q.topic));
+    card.appendChild(h('h2', { style: 'font-size:1.25rem;margin:8px 0 16px;color:var(--ink)' }, q.question));
+
+    var answeredIdx = theoryState.evalAnswers[qIdx];
+    var optList = h('div', { class: 'quiz-options' });
+
+    q.options.forEach(function (optText, idx) {
+      var optBtn = h('button', {
+        class: 'btn btn--soft quiz-opt-btn',
+        type: 'button',
+        style: 'text-align:left;display:block;width:100%;margin-bottom:10px;padding:12px 16px;white-space:normal;line-height:1.4'
+      }, optText);
+
+      if (answeredIdx !== undefined) {
+        optBtn.disabled = true;
+        if (idx === q.correct) {
+          optBtn.style.background = '#3FC1A0';
+          optBtn.style.color = '#FFFFFF';
+          optBtn.style.borderColor = '#2A9E81';
+        } else if (idx === answeredIdx) {
+          optBtn.style.background = '#FF6B4A';
+          optBtn.style.color = '#FFFFFF';
+          optBtn.style.borderColor = '#E0522F';
+        }
+      } else {
+        optBtn.addEventListener('click', function () {
+          theoryState.evalAnswers[qIdx] = idx;
+          if (idx === q.correct) {
+            Sound.win();
+            theoryState.evalScore += 1;
+          } else {
+            Sound.bump();
+          }
+          renderTheory();
+        });
+      }
+      optList.appendChild(optBtn);
+    });
+
+    card.appendChild(optList);
+
+    if (answeredIdx !== undefined) {
+      var isCorrect = (answeredIdx === q.correct);
+      var feedbackBox = h('div', {
+        style: 'margin-top:16px;padding:14px;border-radius:14px;background:' + (isCorrect ? '#E8F8F3' : '#FFF0ED')
+      }, [
+        h('b', { style: 'display:block;margin-bottom:4px;color:' + (isCorrect ? '#2A9E81' : '#E0522F') },
+          isCorrect ? '✅ ¡Respuesta Correcta!' : '❌ Respuesta Incorrecta:'),
+        h('p', { style: 'margin:0;font-size:.88rem;color:#26232E;line-height:1.4' }, q.explain)
+      ]);
+      card.appendChild(feedbackBox);
+
+      var nextBtn = h('button', {
+        class: 'btn btn--primary',
+        type: 'button',
+        style: 'margin-top:16px'
+      }, qIdx + 1 < THEORY_EVAL_QUESTIONS.length ? 'Siguiente Pregunta →' : 'Finalizar y Ver Calificación 🏆');
+
+      nextBtn.addEventListener('click', function () {
+        Sound.tap();
+        theoryState.evalCurrent += 1;
+        renderTheory();
+      });
+      card.appendChild(nextBtn);
+    }
+
+    pane.appendChild(card);
+    return pane;
+  }
+
   function switchRow(title, sub, value, onChange) {
     var sw = h('button', {
       class: 'switch', type: 'button', role: 'switch',
@@ -1968,6 +2328,7 @@
       return true;
     }
     if (key === 'progreso') { renderProgress(); showView('progress'); return true; }
+    if (key === 'teoria' || key === 'theory') { renderTheory(); showView('theory'); return true; }
     if (key === 'repaso' || key === 'quiz') { renderQuiz(); showView('quiz'); return true; }
     if (key === 'libre') { openFreePlay(); return true; }
     return false;
