@@ -491,6 +491,115 @@
         'Con 4 repeticiones, Chispa gira automáticamente en los bloques de hielo y entra a la meta.'
       ],
       praise: '¡Cruzaste el castillo de hielo usando la lógica pura de la programación! ❄️👑'
+    }),
+
+    /* ================= LECCIÓN 6 · Programación en Python ================= */
+    mk({
+      id: 'py1',
+      lesson: 'l6',
+      title: 'Hola, Python: Primeras Sentencias',
+      concept: 'Sintaxis Python',
+      goal: 'Escribe o arma las sentencias chispa.avanzar() para recoger las 2 estrellas y llegar a la bandera.',
+      learn: 'En Python cada orden termina con paréntesis (). Las sentencias se ejecutan en orden hacia abajo.',
+      tip: 'Cada paso adelante se escribe como chispa.avanzar().',
+      grid: [
+        '.....',
+        '.R**F',
+        '.....'
+      ],
+      startDir: 'east',
+      palette: ['move'],
+      maxBlocks: 10,
+      solution: [
+        { type: 'move' }, { type: 'move' }, { type: 'move' }
+      ],
+      hints: [
+        'Necesitas avanzar 3 veces: chispa.avanzar() tres veces seguidas.',
+        'Mira cómo el panel lateral traduce tus bloques a código real de Python.'
+      ],
+      praise: '¡Tus primeras líneas de Python en acción! Ya estás programando en código real.'
+    }),
+
+    mk({
+      id: 'py2',
+      lesson: 'l6',
+      title: 'Girar con Métodos en Python',
+      concept: 'Sintaxis Python',
+      goal: 'Combina avances y un giro a la derecha en código para llegar a la bandera.',
+      learn: 'Para cambiar de dirección en código usamos funciones o métodos: chispa.girar_derecha().',
+      tip: 'Avanza dos veces, gira a la derecha y avanza otras dos veces.',
+      grid: [
+        '.....',
+        '.R.*.',
+        '...*.',
+        '...F.',
+        '.....'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right'],
+      maxBlocks: 12,
+      solution: [
+        { type: 'move' }, { type: 'move' }, { type: 'right' },
+        { type: 'move' }, { type: 'move' }
+      ],
+      hints: [
+        'En Python: chispa.avanzar(), chispa.avanzar(), chispa.girar_derecha()...',
+        'Los paréntesis () le indican a la computadora que ejecute la acción.'
+      ],
+      praise: '¡Coordinaste movimientos y giros con sintaxis de Python!'
+    }),
+
+    mk({
+      id: 'py3',
+      lesson: 'l6',
+      title: 'El Bucle `for` en Python',
+      concept: 'Sintaxis Python',
+      goal: 'Usa un bucle for de Python para recorrer todo el pasillo de estrellas con pocas líneas.',
+      learn: 'En Python el bucle se escribe "for i in range(5):" y las órdenes de adentro llevan sangría (indentación).',
+      tip: 'En vez de escribir 5 avances, un bucle for lo hace en 2 líneas de código.',
+      grid: [
+        '.......',
+        '.R****F',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'repeat'],
+      maxBlocks: 10,
+      solution: [
+        { type: 'repeat', times: 5, do: [{ type: 'move' }] }
+      ],
+      hints: [
+        'Pon un bucle Repetir con 5 repeticiones y Avanzar dentro.',
+        'Mira al lado cómo se escribe en Python: for i in range(5): chispa.avanzar().'
+      ],
+      praise: '¡Dominaste el bucle for de Python! El principio DRY en su máxima expresión.'
+    }),
+
+    mk({
+      id: 'py4',
+      lesson: 'l6',
+      title: 'Condicional `if` en Código',
+      concept: 'Sintaxis Python',
+      goal: 'Usa una sentencia if en Python para que Chispa esquive la pared automáticamente.',
+      learn: 'Una sentencia "if chispa.hay_pared():" consulta un sensor y sólo se ejecuta si es Verdadero.',
+      tip: 'Repite avanzar y si hay pared. El condicional if decide solo cuándo doblar.',
+      grid: [
+        '......',
+        '.R..#.',
+        '...F..',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat', 'ifwall'],
+      maxBlocks: 16,
+      solution: [
+        { type: 'repeat', times: 3, do: [{ type: 'move' }, { type: 'ifwall' }] }
+      ],
+      hints: [
+        'Repite Avanzar y Si hay pared 3 veces.',
+        'En Python se lee: if chispa.hay_pared(): chispa.girar_derecha().'
+      ],
+      praise: '¡Estructura de decisión completada! Uniste for e if como un programador profesional.'
     })
   ];
 

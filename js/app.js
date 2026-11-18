@@ -250,7 +250,7 @@
      ================================================================== */
   function showView(name) {
     S.view = name;
-    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory'].forEach(function (v) {
+    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory', 'dict'].forEach(function (v) {
       var node = document.getElementById('view-' + v);
       if (node) node.hidden = (v !== name);
     });
@@ -373,6 +373,7 @@
 
     var foot = h('div', { class: 'home__foot' }, [
       btn('📖 Teoría & Evaluación', 'btn--primary', function () { renderTheory(); showView('theory'); }),
+      btn('📚 Diccionario de Sentencias', 'btn--soft', function () { renderDict(); showView('dict'); }),
       btn('🧩 Rompecabezas & Repaso', 'btn--soft', function () { renderQuiz(); showView('quiz'); }),
       btn('🎨 Zona libre', 'btn--soft', openFreePlay),
       btn('📊 Mi progreso', 'btn--soft', function () { renderProgress(); showView('progress'); }),
@@ -949,18 +950,45 @@
       'aria-pressed': S.stepMode ? 'true' : 'false'
     }, '🐢 Paso a paso');
 
+    var codeModeToggle = h('button', {
+      class: 'chip chip--mini' + (S.mode === 'python' ? ' is-on' : ''),
+      id: 'code-mode-toggle', type: 'button',
+      style: 'margin-left:auto',
+      'aria-pressed': S.mode === 'python' ? 'true' : 'false'
+    }, S.mode === 'python' ? '🐍 Python Activo' : '🐍 Ver / Escribir Python');
+
     var coderHead = h('div', { class: 'coder__head' }, [
       h('span', {}, 'Mi programa'),
       h('span', { class: 'counter', id: 'counter' }, '0 bloques'),
-      stepToggle
+      stepToggle,
+      codeModeToggle
     ]);
 
     var runBtn = h('button', { class: 'btn btn--primary btn--run', id: 'run-btn', type: 'button' }, [
       h('span', { 'aria-hidden': 'true' }, '▶'), 'Ejecutar'
     ]);
 
+    /* Panel de Python en vivo y editable */
+    var pyPanel = h('div', {
+      class: 'py-live-panel', id: 'py-live-panel',
+      style: 'display:none;background:#26232E;color:#FDEFDD;border-radius:var(--r-md);padding:12px;margin-bottom:10px;font-family:monospace;font-size:.85rem;box-shadow:inset 0 2px 4px rgba(0,0,0,.4)'
+    }, [
+      h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #443E50;padding-bottom:6px' }, [
+        h('span', { style: 'font-weight:bold;color:#3FC1A0' }, '🐍 Editor de Código Python'),
+        h('span', { style: 'font-size:.72rem;color:#8A8299' }, 'Se sincroniza en tiempo real')
+      ]),
+      h('textarea', {
+        id: 'py-editor-input',
+        spellcheck: false,
+        style: 'width:100%;height:130px;background:#1A1820;color:#8BF0D2;border:1px solid #3FC1A0;border-radius:8px;padding:8px;font-family:Consolas, Monaco, monospace;font-size:.86rem;line-height:1.4;resize:vertical',
+        placeholder: '# Escribe aquí tus sentencias de Python:\nchispa.avanzar()\nchispa.girar_derecha()'
+      }),
+      h('div', { id: 'py-editor-err', style: 'color:#FF6B4A;font-size:.76rem;margin-top:6px;display:none' })
+    ]);
+
     var coder = h('aside', { class: 'coder' }, [
       coderHead,
+      pyPanel,
       h('div', { class: 'palette', id: 'palette' }),
       h('div', { class: 'prog-scroll' }, [h('div', { class: 'prog', id: 'prog' })]),
       h('div', { class: 'coder__actions' }, [
@@ -990,6 +1018,40 @@
       }
       resetRunButton();
     });
+
+    codeModeToggle.addEventListener('click', function () {
+      var panel = $('#py-live-panel');
+      var input = $('#py-editor-input');
+      var isVisible = panel.style.display !== 'none';
+      if (isVisible) {
+        panel.style.display = 'none';
+        codeModeToggle.classList.remove('is-on');
+        codeModeToggle.textContent = '🐍 Ver / Escribir Python';
+      } else {
+        panel.style.display = 'block';
+        codeModeToggle.classList.add('is-on');
+        codeModeToggle.textContent = '🐍 Ocultar Python';
+        if (input) input.value = toCode(S.program);
+      }
+      Sound.tap();
+    });
+
+    var pyInput = $('#py-editor-input');
+    if (pyInput) {
+      pyInput.addEventListener('input', function () {
+        var parsed = parsePython(pyInput.value);
+        var errBox = $('#py-editor-err');
+        if (parsed.errors.length) {
+          errBox.style.display = 'block';
+          errBox.textContent = '⚠️ Línea ' + parsed.errors[0].line + ': ' + parsed.errors[0].text + ' no reconocida. Usa chispa.avanzar(), chispa.girar_derecha(), etc.';
+        } else {
+          errBox.style.display = 'none';
+          pushUndo();
+          S.program = parsed.program;
+          renderProgram(true); // true = no sobreescribir el textarea mientras el usuario escribe
+        }
+      });
+    }
 
     S.board = mountBoard(S.level, board);
     renderPalette();
@@ -1095,7 +1157,7 @@
     });
   }
 
-  function renderProgram() {
+  function renderProgram(skipTextSync) {
     var host = $('#prog');
     if (!host) return;
     clear(host);
@@ -1111,6 +1173,12 @@
       counter.classList.toggle('is-over', total >= (S.mission.maxBlocks || 60));
     }
     renderPalette();
+
+    /* Sincronizar el editor lateral de Python en vivo */
+    if (!skipTextSync) {
+      var pyInput = $('#py-editor-input');
+      if (pyInput) pyInput.value = toCode(S.program);
+    }
   }
 
   function renderItem(block, path) {
@@ -1424,20 +1492,68 @@
     var pad = '    '.repeat(indent);
     (program || []).forEach(function (b) {
       if (b.type === 'repeat') {
-        out += pad + 'repetir ' + (b.times || 1) + ' veces:\n';
+        out += pad + 'for i in range(' + (b.times || 1) + '):\n';
         var inner = toCode(b.do || [], indent + 1, '');
-        out += inner || (pad + '    (nada)\n');
+        out += inner || (pad + '    pass\n');
       } else if (b.type === 'ifwall') {
-        out += pad + 'si hay pared adelante:\n' + pad + '    girar a la derecha\n';
+        out += pad + 'if chispa.hay_pared():\n' + pad + '    chispa.girar_derecha()\n';
       } else if (b.type === 'move') {
-        out += pad + 'avanzar\n';
+        out += pad + 'chispa.avanzar()\n';
       } else if (b.type === 'left') {
-        out += pad + 'girar a la izquierda\n';
+        out += pad + 'chispa.girar_izquierda()\n';
       } else if (b.type === 'right') {
-        out += pad + 'girar a la derecha\n';
+        out += pad + 'chispa.girar_derecha()\n';
       }
     });
     return out;
+  }
+
+  function parsePython(text) {
+    var lines = text.split('\n');
+    var errors = [];
+    function parseBlock(startIdx, minIndent) {
+      var list = [];
+      var i = startIdx;
+      while (i < lines.length) {
+        var raw = lines[i];
+        var trimmed = raw.trim();
+        if (!trimmed || trimmed.indexOf('#') === 0 || trimmed.indexOf('//') === 0) {
+          i++;
+          continue;
+        }
+        var indent = raw.search(/\S/);
+        if (indent < minIndent) break;
+        var clean = trimmed.toLowerCase();
+        if (clean === 'chispa.avanzar()' || clean === 'avanzar()' || clean === 'avanzar') {
+          list.push({ id: uid(), type: 'move' });
+          i++;
+        } else if (clean === 'chispa.girar_izquierda()' || clean === 'girar_izquierda()' || clean === 'izquierda()') {
+          list.push({ id: uid(), type: 'left' });
+          i++;
+        } else if (clean === 'chispa.girar_derecha()' || clean === 'girar_derecha()' || clean === 'derecha()') {
+          list.push({ id: uid(), type: 'right' });
+          i++;
+        } else if (clean === 'if chispa.hay_pared():' || clean === 'if chispa.hay_pared()' || clean === 'si_hay_pared()' || clean === 'si hay pared:') {
+          list.push({ id: uid(), type: 'ifwall' });
+          i++;
+        } else {
+          var loopMatch = clean.match(/^for\s+.*\s+in\s+range\((\d+)\)\s*:?$/) ||
+                          clean.match(/^repetir\s+(\d+)\s*(?:veces)?\s*:?$/);
+          if (loopMatch) {
+            var times = Math.max(1, Math.min(20, parseInt(loopMatch[1], 10) || 1));
+            var innerRes = parseBlock(i + 1, indent + 1);
+            list.push({ id: uid(), type: 'repeat', times: times, do: innerRes.list });
+            i = innerRes.nextIdx;
+          } else {
+            errors.push({ line: i + 1, text: trimmed });
+            i++;
+          }
+        }
+      }
+      return { list: list, nextIdx: i };
+    }
+    var res = parseBlock(0, 0);
+    return { program: res.list, errors: errors };
   }
 
   function codePanel(code, title) {
@@ -1987,6 +2103,28 @@
         'Una vez que dominas la lógica (Secuencia + Bucles + Condiciones), aprender la sintaxis escrita de cualquier lenguaje es pan comido.'
       ],
       blockCorrelation: 'Aprender a pensar en bloques entrena tu mente como ingeniero de software: abstraer problemas, dividirlos en piezas y depurar errores.'
+    },
+    {
+      title: '6. Sentencias, Sintaxis y Lenguajes',
+      badge: 'Sintaxis & Sentencias',
+      summary: 'Cómo se escriben las órdenes en texto y las reglas que las gobiernan.',
+      content: [
+        'Una **Sentencia (Statement)** es una instrucción completa en un lenguaje de programación. Es el equivalente a una oración con sujeto y predicado en español.',
+        'La **Sintaxis** es el conjunto de reglas gramaticales y ortográficas del lenguaje. En Python, si olvidas un paréntesis `()` o los dos puntos `:`, se produce un **Error de Sintaxis (Syntax Error)** y el programa no puede arrancar.',
+        'Los lenguajes como **Python** usan indentación (espacios hacia la derecha) para indicar qué órdenes van dentro de un bucle o de una condición.'
+      ],
+      blockCorrelation: 'Correlación: Mientras que en los bloques encajas una pieza dentro de otra visualmente, en Python colocas 4 espacios de sangría para indicar que una sentencia pertenece a un bloque superior.'
+    },
+    {
+      title: '7. Lenguajes Compilados vs Lenguajes Interpretados',
+      badge: 'Compilado vs Interpretado',
+      summary: 'Cómo las computadoras traducen el código humano a ceros y unos.',
+      content: [
+        'Las computadoras sólo entienden lenguaje de máquina (ceros y unos: binario). Para que entiendan nuestro código, existen dos métodos principales:',
+        '**Lenguaje Interpretado (como Python o JavaScript):** Un programa llamado *Intérprete* lee el código línea por línea y lo ejecuta al instante. Si hay un error en la línea 10, ejecutará las primeras 9 y se detendrá al llegar a la 10.',
+        '**Lenguaje Compilado (como C++ o Rust):** Un programa llamado *Compilador* traduce TODO el archivo a ceros y unos antes de ejecutarlo. Si hay un solo error en cualquier lugar, no genera el ejecutable hasta que lo corrijas.'
+      ],
+      blockCorrelation: 'En CodeKids, Chispa actúa como un intérprete en tiempo real: lee cada sentencia de Python o bloque uno tras otro y lo reproduce de inmediato en el mapa.'
     }
   ];
 
@@ -2056,6 +2194,28 @@
       ],
       correct: 1,
       explain: 'La depuración es un proceso analítico: seguir el rastro, encontrar la anomalía y corregirla con precisión.'
+    },
+    {
+      topic: 'Sintaxis y Sentencias',
+      question: '¿Qué ocurre en un lenguaje como Python si olvidas escribir los paréntesis `()` en `chispa.avanzar()`?',
+      options: [
+        'El robot avanza el doble de rápido',
+        'Ocurre un error de sintaxis y la computadora no ejecuta la orden como una acción',
+        'La computadora inventa los paréntesis por sí sola'
+      ],
+      correct: 1,
+      explain: 'La sintaxis exige los paréntesis () para ejecutar un método o función; sin ellos, la orden no se realiza.'
+    },
+    {
+      topic: 'Compilado vs Interpretado',
+      question: '¿Cuál es la diferencia clave entre un lenguaje interpretado (como Python) y uno compilado (como C++)?',
+      options: [
+        'El interpretado lee y ejecuta línea por línea; el compilado traduce todo el código a binario antes de ejecutarlo',
+        'Los compilados solo funcionan en teléfonos y los interpretados en computadoras',
+        'No hay ninguna diferencia, son exactamente iguales'
+      ],
+      correct: 0,
+      explain: 'Python utiliza un intérprete que traduce y corre cada instrucción sobre la marcha.'
     }
   ];
 
@@ -2288,6 +2448,111 @@
     return pane;
   }
 
+  /* ==================================================================
+     DICCIONARIO DE SENTENCIAS (LENGUAJE COMÚN vs PYTHON)
+     ================================================================== */
+  var SENTENCE_DICTIONARY = [
+    {
+      category: 'Movimiento y Dirección',
+      common: 'Avanzar un paso hacia adelante',
+      python: 'chispa.avanzar()',
+      syntaxDesc: 'chispa es el objeto (robot), .avanzar() es el método de acción. Los paréntesis ejecutan la orden.',
+      blockIcon: 'move',
+      example: 'chispa.avanzar()'
+    },
+    {
+      category: 'Movimiento y Dirección',
+      common: 'Girar hacia la izquierda (sin avanzar)',
+      python: 'chispa.girar_izquierda()',
+      syntaxDesc: 'Cambia la orientación 90° en sentido antihorario. No cambia las coordenadas x, y del robot.',
+      blockIcon: 'left',
+      example: 'chispa.girar_izquierda()\nchispa.avanzar()'
+    },
+    {
+      category: 'Movimiento y Dirección',
+      common: 'Girar hacia la derecha (sin avanzar)',
+      python: 'chispa.girar_derecha()',
+      syntaxDesc: 'Cambia la orientación 90° en sentido horario.',
+      blockIcon: 'right',
+      example: 'chispa.girar_derecha()\nchispa.avanzar()'
+    },
+    {
+      category: 'Estructuras de Repetición (Bucles)',
+      common: 'Repetir una acción N veces',
+      python: 'for i in range(N):\n    # acciones sangradas...',
+      syntaxDesc: 'for i in range(N): inicia el bucle. range(N) define la cantidad de ciclos. Los dos puntos : y 4 espacios de sangría encierran las órdenes repetidas.',
+      blockIcon: 'repeat',
+      example: 'for i in range(4):\n    chispa.avanzar()\n    chispa.girar_derecha()'
+    },
+    {
+      category: 'Estructuras de Decisión (Condicionales)',
+      common: 'Si hay pared adelante, girar; si no, seguir libre',
+      python: 'if chispa.hay_pared():\n    chispa.girar_derecha()',
+      syntaxDesc: 'if evalúa una condición booleana. chispa.hay_pared() devuelve True si hay obstáculo. Si es True, ejecuta el bloque indentado.',
+      blockIcon: 'ifwall',
+      example: 'for i in range(8):\n    chispa.avanzar()\n    if chispa.hay_pared():\n        chispa.girar_derecha()'
+    },
+    {
+      category: 'Comentarios y Documentación',
+      common: 'Escribir notas que la computadora no ejecuta',
+      python: '# Esto es un comentario',
+      syntaxDesc: 'Todo lo que comience con el símbolo almohadilla # es ignorado por el intérprete de Python. Sirve para que los humanos expliquen el código.',
+      blockIcon: null,
+      example: '# Paso 1: Recoger la primera estrella\nchispa.avanzar()'
+    }
+  ];
+
+  function renderDict() {
+    var host = $('#dict-root');
+    if (!host) return;
+    clear(host);
+
+    var top = h('div', { class: 'topbar' }, [
+      backBtn(function () { showView('home'); renderHome(); }),
+      h('div', { class: 'topbar__mid' }, [
+        h('p', { class: 'eyebrow' }, 'Referencia y Traducción'),
+        h('h1', { class: 'topbar__title' }, 'Diccionario de Sentencias')
+      ]),
+      h('div', { class: 'topbar__tools' }, [
+        btn('Probar en Reto 6 🐍', 'btn--primary', function () { openMission('py1'); })
+      ])
+    ]);
+
+    var intro = h('div', { class: 'progress-card', style: 'padding:20px;margin-bottom:16px' }, [
+      h('h2', { style: 'margin-bottom:6px' }, '📖 De lenguaje natural a Python'),
+      h('p', { class: 'read' }, 'Este diccionario compara cómo pensamos una orden en lenguaje común y cómo se escribe con la sintaxis exacta de Python que entiende Chispa.')
+    ]);
+
+    var list = h('div', { style: 'display:flex;flex-direction:column;gap:14px' });
+
+    SENTENCE_DICTIONARY.forEach(function (item) {
+      var card = h('div', {
+        class: 'progress-card',
+        style: 'padding:18px 20px;border-left:5px solid #3FC1A0'
+      }, [
+        h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px' }, [
+          h('span', { class: 'kicker', style: 'margin:0' }, item.category),
+          item.blockIcon ? h('span', {
+            style: 'background:#FDEFDD;padding:2px 8px;border-radius:999px;font-size:.76rem;font-weight:bold;color:#26232E'
+          }, 'Bloque ' + BLOCK[item.blockIcon].label) : null
+        ]),
+        h('h3', { style: 'font-size:1.12rem;margin:4px 0 10px;color:var(--ink)' }, '🗣️ ' + item.common),
+        h('div', {
+          style: 'background:#26232E;color:#8BF0D2;padding:12px 14px;border-radius:10px;font-family:Consolas, Monaco, monospace;font-size:.9rem;line-height:1.4;margin-bottom:8px'
+        }, [
+          h('span', { style: 'color:#8A8299;display:block;font-size:.74rem;margin-bottom:2px' }, '🐍 Sintaxis en Python:'),
+          h('code', {}, item.python)
+        ]),
+        h('p', { style: 'font-size:.86rem;color:var(--ink-soft);margin:6px 0 0;line-height:1.4' }, item.syntaxDesc)
+      ]);
+      list.appendChild(card);
+    });
+
+    host.appendChild(top);
+    host.appendChild(intro);
+    host.appendChild(list);
+  }
+
   function switchRow(title, sub, value, onChange) {
     var sw = h('button', {
       class: 'switch', type: 'button', role: 'switch',
@@ -2329,6 +2594,7 @@
     }
     if (key === 'progreso') { renderProgress(); showView('progress'); return true; }
     if (key === 'teoria' || key === 'theory') { renderTheory(); showView('theory'); return true; }
+    if (key === 'diccionario' || key === 'dict') { renderDict(); showView('dict'); return true; }
     if (key === 'repaso' || key === 'quiz') { renderQuiz(); showView('quiz'); return true; }
     if (key === 'libre') { openFreePlay(); return true; }
     return false;

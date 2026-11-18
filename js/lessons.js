@@ -176,6 +176,34 @@
         note: 'Chispa esquiva los abetos nevados y recoge las estrellas de la fiesta.'
       },
       retos: ['s1', 's2']
+    },
+
+    /* ==================== LECCIÓN 6 · De Bloques a Python ==================== */
+    {
+      id: 'l6',
+      num: 6,
+      title: 'Escribiendo Código Real: Python',
+      concept: 'Sintaxis & Sentencias',
+      idea: 'Los bloques se convierten en texto real. Cada orden se llama sentencia y la forma de escribirla se llama sintaxis.',
+      bullets: [
+        'Una sentencia es una orden completa: chispa.avanzar(). Los paréntesis () le dicen a la máquina que actúe.',
+        'La sintaxis son las reglas de ortografía del lenguaje: dos puntos (:), sangría (espacios) y mayúsculas/minúsculas.',
+        'Python es interpretado: lee y ejecuta tu código línea por línea de arriba a abajo.'
+      ],
+      read: 'Hasta ahora has programado con bloques visuales para no equivocarte de teclas. ¡Pero en el mundo profesional los programadores escriben texto! En esta lección aprenderás cómo se traduce cada bloque a Python y cómo las computadoras leen e interpretan tus sentencias.',
+      example: {
+        caption: 'Un programa en Python con secuencia y giro: chispa.avanzar() y chispa.girar_izquierda().',
+        grid: ['....', '..F.', 'R...'],
+        startDir: 'east',
+        program: [
+          { type: 'move' },
+          { type: 'move' },
+          { type: 'left' },
+          { type: 'move' }
+        ],
+        note: 'En Python esto se escribe línea a línea: avanzar, avanzar, girar a la izquierda y avanzar.'
+      },
+      retos: ['py1', 'py2', 'py3', 'py4']
     }
   ];
 
