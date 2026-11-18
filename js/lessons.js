@@ -231,6 +231,34 @@
         note: 'Escribes las 3 líneas con el teclado y pulsas Ejecutar.'
       },
       retos: ['type1', 'type2', 'type3']
+    },
+
+    /* ==================== LECCIÓN 8 · Misión Espacial: Rescate de la Nave ==================== */
+    {
+      id: 'l8',
+      num: 8,
+      title: 'Misión Espacial: Rescate de la Nave',
+      concept: 'Supervivencia & Código',
+      idea: 'La nave nodriza sufrió un accidente en el espacio profundo. Tienes 8 vidas de escudo de energía y 5 etapas para rescatarla.',
+      bullets: [
+        'Modo supervivencia: comienzas la travesía con 8 vidas (escudos de energía). Si te equivocas o chocas, pierdes una vida.',
+        '5 etapas progresivas (Stage 1 a Stage 5): esquiva meteoritos, rayos láser espaciales y alienígenas.',
+        'Todo se digita en código Python puro: la computadora de navegación sólo responde a sentencias manuales precisas.'
+      ],
+      read: '¡Alerta roja espacial! La nave de exploración ha quedado varada tras un impacto cósmico. Tu misión es enviar a Chispa espacial a través de 5 sectores hostiles llenos de campos de meteoritos, rayos láser y anomalías alienígenas para alcanzar y reparar la nave nodriza. Cada error consume energía de tus escudos (tienes 8 vidas en total para todo el desafío). Digita cada sentencia con precisión quirúrgica.',
+      example: {
+        caption: 'Sector de prueba: Chispa activa sus propulsores para alcanzar la cápsula de señal.',
+        grid: ['.......', '.R***F.', '.......'],
+        startDir: 'east',
+        program: [
+          { type: 'move' },
+          { type: 'move' },
+          { type: 'move' },
+          { type: 'move' }
+        ],
+        note: 'Digita las órdenes para guiar a Chispa entre los escombros hasta la nave.'
+      },
+      retos: ['space1', 'space2', 'space3', 'space4', 'space5']
     }
   ];
 

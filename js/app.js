@@ -75,7 +75,21 @@
     right: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19.5 12a7.5 7.5 0 1 0-7.5 7.5"/><path d="M19.5 7.5V12H15"/></svg>',
     repeat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5A5 5 0 0 1 9 4.5h10"/><path d="M15.5 1.5 19 4.5l-3.5 3"/><path d="M20 14.5a5 5 0 0 1-5 5H5"/><path d="M8.5 22.5 5 19.5l3.5-3"/></svg>',
     ifwall: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="9" rx="2"/><path d="M3 15.5h18M9 11v4.5M15 15.5V20"/></svg>',
-    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/></svg>'
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/></svg>',
+    spaceship: '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<polygon points="50,10 75,70 50,60 25,70" fill="#5AA9E6" stroke="#26232E" stroke-width="4" stroke-linejoin="round"/>' +
+      '<polygon points="50,22 62,60 50,54 38,60" fill="#FFFFFF"/>' +
+      '<circle cx="50" cy="40" r="7" fill="#8BF0D2" stroke="#26232E" stroke-width="2.5"/>' +
+      '<polygon points="25,55 12,72 25,68" fill="#FF6B4A" stroke="#26232E" stroke-width="3"/>' +
+      '<polygon points="75,55 88,72 75,68" fill="#FF6B4A" stroke="#26232E" stroke-width="3"/>' +
+      '<polygon points="45,62 50,88 55,62" fill="#FFC94D"/>' +
+      '</svg>',
+    meteor: '<svg viewBox="0 0 100 100" aria-hidden="true">' +
+      '<polygon points="20,30 50,15 80,32 88,68 62,90 30,85 12,60" fill="#786D88" stroke="#26232E" stroke-width="4" stroke-linejoin="round"/>' +
+      '<circle cx="42" cy="40" r="9" fill="#4A4358"/>' +
+      '<circle cx="68" cy="62" r="7" fill="#4A4358"/>' +
+      '<circle cx="35" cy="68" r="5" fill="#4A4358"/>' +
+      '</svg>'
   };
 
   var BLOCK = {
@@ -90,7 +104,7 @@
      Almacenamiento
      ================================================================== */
   function defaults() {
-    return { name: '', stars: {}, breaks: 0, settings: { sound: true, calm: false, step: false } };
+    return { name: '', stars: {}, breaks: 0, spaceLives: 8, settings: { sound: true, calm: false, step: false } };
   }
 
   var store = (function load() {
@@ -103,6 +117,7 @@
       base.name = typeof p.name === 'string' ? p.name.slice(0, 16) : '';
       base.stars = p.stars && typeof p.stars === 'object' ? p.stars : {};
       base.breaks = Number(p.breaks) || 0;
+      base.spaceLives = typeof p.spaceLives === 'number' ? p.spaceLives : 8;
       if (p.settings) {
         base.settings.sound = p.settings.sound !== false;
         base.settings.calm = !!p.settings.calm;
@@ -350,14 +365,15 @@
       var done = lessonProgress(l);
       var isNext = l.id === cl.id && !allDone;
       var isSeason = l.id === 'l_season';
+      var isSpaceLesson = l.id === 'l8';
       var card = h('button', {
-        class: 'lesson-card' + (lessonDone(l) ? ' is-done' : '') + (isNext ? ' is-next' : '') + (isSeason ? ' is-season' : ''),
+        class: 'lesson-card' + (lessonDone(l) ? ' is-done' : '') + (isNext ? ' is-next' : '') + (isSeason ? ' is-season' : '') + (isSpaceLesson ? ' is-space' : ''),
         type: 'button',
         'aria-label': 'Lección ' + l.num + ': ' + l.title
       }, [
-        h('span', { class: 'lesson-card__num' + (isSeason ? ' is-season-badge' : '') }, lessonDone(l) ? '✓' : String(l.num)),
+        h('span', { class: 'lesson-card__num' + (isSeason ? ' is-season-badge' : (isSpaceLesson ? ' is-space-badge' : '')) }, lessonDone(l) ? '✓' : (isSpaceLesson ? '🚀' : String(l.num))),
         h('div', { class: 'lesson-card__body' }, [
-          h('p', { class: 'lesson-card__kicker' }, isSeason ? '❄️ Evento Especial' : l.concept),
+          h('p', { class: 'lesson-card__kicker' }, isSeason ? '❄️ Evento Especial' : (isSpaceLesson ? '🌌 Misión Especial: 5 Stages' : l.concept)),
           h('h3', { class: 'lesson-card__title' }, l.title),
           h('p', { class: 'lesson-card__idea' }, l.idea),
           h('div', { class: 'lesson-card__foot' }, [
@@ -652,6 +668,9 @@
     if (!host) return bag;
     clear(host);
     host.style.setProperty('--ar', (level.w / level.h).toFixed(4));
+    var isSpace = !!(S.mission && (S.mission.spaceMission || S.mission.lesson === 'l8'));
+    if (isSpace) host.classList.add('board--space');
+    else host.classList.remove('board--space');
 
     var tiles = h('div', { class: 'tiles' });
     tiles.style.gridTemplateColumns = 'repeat(' + level.w + ', 1fr)';
@@ -662,15 +681,19 @@
       for (var x = 0; x < level.w; x++) {
         var wall = E.isWall(level, x, y);
         var cls = 'tile';
-        if (wall) cls += ' tile--wall';
-        else if ((x + y) % 2 === 1) cls += ' tile--alt';
+        if (wall) cls += isSpace ? ' tile--space-wall' : ' tile--wall';
+        else if ((x + y) % 2 === 1) cls += isSpace ? ' tile--space-alt' : ' tile--alt';
+        else if (isSpace) cls += ' tile--space-floor';
         var tile = h('div', { class: cls });
         tile.dataset.x = x; tile.dataset.y = y;
+        if (wall && isSpace) {
+          tile.appendChild(h('div', { class: 'item item--meteor', style: 'opacity:.7', html: SVG.meteor }));
+        }
         if (!wall && level.starAt[E.key(x, y)]) {
           tile.appendChild(h('div', { class: 'item', html: SVG.star() }));
         }
         if (!wall && level.flag && level.flag.x === x && level.flag.y === y) {
-          tile.appendChild(h('div', { class: 'item', html: SVG.flag }));
+          tile.appendChild(h('div', { class: 'item', html: isSpace ? SVG.spaceship : SVG.flag }));
         }
         tiles.appendChild(tile);
         bag.cells[y][x] = tile;
@@ -931,39 +954,8 @@
       tools
     ]);
 
-    var goalRow = h('div', { class: 'goal__row' }, [
-      h('button', { class: 'chip chip--hint', id: 'hint-btn', type: 'button' }, '💡 Pista')
-    ]);
-    if (!S.free && S.level.par) {
-      goalRow.appendChild(h('div', { class: 'goal__meta' }, [
-        h('span', { html: SVG.star('#FFC94D') }),
-        h('span', {}, 'meta ' + S.level.par + ' bloques')
-      ]));
-    }
-
-    var goal = h('div', { class: 'goal' }, [
-      h('p', { class: 'goal__text' }, m.goal),
-      goalRow,
-      h('p', { class: 'hint-box', id: 'hint-box', hidden: 'hidden' })
-    ]);
-
-    var board = h('div', { class: 'board', id: 'board' });
-    var feedback = h('div', { class: 'feedback', id: 'feedback', role: 'status', 'aria-live': 'polite' });
-
-    var stage = h('section', { class: 'stage' }, [
-      goal,
-      h('div', { class: 'board-wrap' }, [board]),
-      feedback
-    ]);
-
-    var stepToggle = h('button', {
-      class: 'chip chip--mini' + (S.stepMode ? ' is-on' : ''),
-      id: 'step-toggle', type: 'button',
-      'aria-pressed': S.stepMode ? 'true' : 'false'
-    }, '🐢 Paso a paso');
-
-    /* MODO: 'text' (solo digitar código) vs 'blocks' */
-    var isPureTyping = !!m.pureTyping || m.lesson === 'l7';
+    var isSpaceMission = !!(m.spaceMission || m.lesson === 'l8');
+    var isPureTyping = !!m.pureTyping || m.lesson === 'l7' || isSpaceMission;
     var isTextMode = isPureTyping || (m.lesson === 'l6' || store.settings.codeMode === 'text');
 
     var modeBtn = h('button', {
@@ -974,7 +966,7 @@
     }, isTextMode ? '⌨️ Digitar Código (Python)' : '🧩 Modo Bloques');
 
     var coderHead = h('div', { class: 'coder__head' }, [
-      h('span', {}, isPureTyping ? 'Terminal de Código Puro' : (isTextMode ? 'Terminal Python' : 'Mi programa')),
+      h('span', {}, isSpaceMission ? '🚀 Terminal de Vuelo Espacial' : (isPureTyping ? 'Terminal de Código Puro' : (isTextMode ? 'Terminal Python' : 'Mi programa'))),
       h('span', { class: 'counter', id: 'counter' }, '0 líneas'),
       stepToggle,
       modeBtn
@@ -982,6 +974,53 @@
 
     var runBtn = h('button', { class: 'btn btn--primary btn--run', id: 'run-btn', type: 'button' }, [
       h('span', { 'aria-hidden': 'true' }, '▶'), 'Ejecutar'
+    ]);
+
+    /* Barra de Vidas para la misión espacial (8 vidas) */
+    var spaceLivesWidget = null;
+    if (isSpaceMission) {
+      var livesIcons = [];
+      for (var li = 0; li < 8; li++) {
+        livesIcons.push(h('span', {
+          class: 'heart-icon' + (li < store.spaceLives ? '' : ' is-lost')
+        }, li < store.spaceLives ? '❤️' : '🖤'));
+      }
+      spaceLivesWidget = h('div', { class: 'lives-bar', id: 'space-lives-bar', title: 'Energía de escudos: ' + store.spaceLives + ' de 8 vidas' }, [
+        h('span', { class: 'lives-label' }, 'VIDAS:'),
+        h('span', { id: 'hearts-list' }, livesIcons)
+      ]);
+    }
+
+    var goalRow = h('div', { class: 'goal__row' }, [
+      h('button', { class: 'chip chip--hint', id: 'hint-btn', type: 'button' }, '💡 Pista')
+    ]);
+    if (isSpaceMission) {
+      goalRow.appendChild(h('span', { class: 'stage-badge' }, 'STAGE ' + (m.stageNum || 1) + '/5'));
+      if (spaceLivesWidget) goalRow.appendChild(spaceLivesWidget);
+    } else if (!S.free && S.level.par) {
+      goalRow.appendChild(h('div', { class: 'goal__meta' }, [
+        h('span', { html: SVG.star('#FFC94D') }),
+        h('span', {}, 'meta ' + S.level.par + ' bloques')
+      ]));
+    }
+
+    /* Target Panel para misión espacial con dibujo de la nave averiada */
+    var targetPanel = null;
+    if (isSpaceMission) {
+      targetPanel = h('div', { class: 'stage-target-panel' }, [
+        h('div', { class: 'stage-target-icon', html: SVG.spaceship }),
+        h('div', { class: 'stage-target-info' }, [
+          h('span', { class: 'stage-target-title' }, '🛰️ Objetivo de la Etapa ' + (m.stageNum || 1) + ' (Hasta dónde llegar):'),
+          h('span', { class: 'stage-target-text' }, m.targetDesc || 'Rescatar la Nave Nodriza averiada sorteando los peligros espaciales.')
+        ])
+      ]);
+    }
+
+    var goal = h('div', { class: 'goal' }, [
+      h('p', { class: 'goal__text' }, m.goal),
+      goalRow,
+      targetPanel,
+      h('p', { class: 'hint-box', id: 'hint-box', hidden: 'hidden' })
     ]);
 
     /* Editor de texto para digitar sentencias */
@@ -1457,6 +1496,17 @@
       setFeedback('info', '🤔', 'Recogiste todo, pero Chispa no llegó a la bandera. ¿Qué orden falta al final?');
     }
 
+    /* En Misión Espacial (Lección 8), restar una vida al fallar */
+    if (S.mission && (S.mission.spaceMission || S.mission.lesson === 'l8')) {
+      store.spaceLives = Math.max(0, (store.spaceLives !== undefined ? store.spaceLives : 8) - 1);
+      save();
+      updateSpaceLivesUI();
+      if (store.spaceLives <= 0) {
+        openGameOverModal();
+        return;
+      }
+    }
+
     if (S.attempts >= 4) {
       var hintBox = $('#hint-box');
       if (hintBox && hintBox.hidden) {
@@ -1465,6 +1515,53 @@
         hintBox.textContent = hints[Math.min(S.hintsRevealed, hints.length - 1)] || 'Prueba con el modo paso a paso.';
       }
     }
+  }
+
+  function updateSpaceLivesUI() {
+    var bar = $('#space-lives-bar');
+    if (!bar) return;
+    var list = $('#hearts-list');
+    if (!list) return;
+    clear(list);
+    var lives = store.spaceLives !== undefined ? store.spaceLives : 8;
+    for (var i = 0; i < 8; i++) {
+      list.appendChild(h('span', {
+        class: 'heart-icon' + (i < lives ? '' : ' is-lost')
+      }, i < lives ? '❤️' : '🖤'));
+    }
+    bar.title = 'Energía de escudos: ' + lives + ' de 8 vidas';
+  }
+
+  function openGameOverModal() {
+    Sound.error();
+    var modal = h('div', { class: 'modal', style: 'border:2px solid #FF6B4A' }, [
+      h('div', { style: 'font-size:2.8rem;margin-bottom:6px' }, '💥🛸'),
+      h('h2', { style: 'color:#FF6B4A' }, '¡Te has quedado sin vidas!'),
+      h('p', { class: 'lead' }, 'Los escudos espaciales de Chispa se agotaron al perder las 8 vidas. La nave nodriza no pudo ser rescatada en este intento.'),
+      h('p', {}, '¡Pero un buen astronauta nunca se rinde! Puedes recargar las 8 vidas de escudo de inmediato y volver a intentarlo.'),
+      h('div', { class: 'modal__actions' }, [
+        h('button', {
+          class: 'btn btn--primary', type: 'button',
+          onclick: function () {
+            store.spaceLives = 8;
+            save();
+            closeOverlay();
+            openMission(S.mission.id);
+          }
+        }, '⚡ Recargar 8 vidas y reintentar'),
+        h('button', {
+          class: 'btn btn--ghost', type: 'button',
+          onclick: function () {
+            store.spaceLives = 8;
+            save();
+            closeOverlay();
+            if (S.mission && S.mission.lesson) openLesson(S.mission.lesson, 2);
+            else { showView('home'); renderHome(); }
+          }
+        }, 'Volver a la base')
+      ])
+    ]);
+    overlay(modal);
   }
 
   /* ==================================================================

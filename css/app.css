@@ -1026,6 +1026,26 @@ body.calm .repeat.is-target { box-shadow: 0 0 0 2px var(--sun-d); }
 /* =====================================================================
    13. Responsive
    ===================================================================== */
+.lesson-card.is-space {
+  border-color: #5AA9E6;
+  background: linear-gradient(135deg, #161B33 0%, #1A2544 100%);
+  color: #F0F4FC;
+}
+.lesson-card.is-space .lesson-card__title {
+  color: #8BF0D2;
+}
+.lesson-card.is-space .lesson-card__idea {
+  color: #BAC7DE;
+}
+.lesson-card.is-space .lesson-card__steps {
+  color: #7997C2;
+}
+.lesson-card__num.is-space-badge {
+  background: #2E1B4E;
+  color: #5AA9E6;
+  border-color: #5AA9E6;
+}
+
 @media (min-width: 900px) {
   .mission-grid {
     grid-template-columns: minmax(0, 1fr) 392px;
@@ -1451,6 +1471,26 @@ body.calm .repeat.is-target { box-shadow: 0 0 0 2px var(--sun-d); }
   .micro-note { text-align: right; }
 }
 
+.lesson-card.is-space {
+  border-color: #5AA9E6;
+  background: linear-gradient(135deg, #161B33 0%, #1A2544 100%);
+  color: #F0F4FC;
+}
+.lesson-card.is-space .lesson-card__title {
+  color: #8BF0D2;
+}
+.lesson-card.is-space .lesson-card__idea {
+  color: #BAC7DE;
+}
+.lesson-card.is-space .lesson-card__steps {
+  color: #7997C2;
+}
+.lesson-card__num.is-space-badge {
+  background: #2E1B4E;
+  color: #5AA9E6;
+  border-color: #5AA9E6;
+}
+
 @media (min-width: 900px) {
   .wrap--lesson {
     min-height: 100dvh;
@@ -1464,4 +1504,101 @@ body.calm .repeat.is-target { box-shadow: 0 0 0 2px var(--sun-d); }
     justify-content: center;
     padding-bottom: 34px;
   }
+}
+
+/* =====================================================================
+   ESPACIO / LECCIÓN 8 (Rescate Espacial, Meteoritos, Láseres, Vidas)
+   ===================================================================== */
+.board--space {
+  background: radial-gradient(circle at 50% 30%, #161B33 0%, #0A0C16 100%);
+  border-color: #384268;
+  box-shadow: 0 0 25px rgba(90, 169, 230, .25), inset 0 0 15px rgba(0,0,0,.6);
+}
+.tile--space-floor {
+  background: transparent !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04) !important;
+}
+.tile--space-alt {
+  background: rgba(255, 255, 255, .015) !important;
+}
+.tile--space-wall {
+  background:
+    radial-gradient(circle at 35% 35%, #5C5268 0%, #292433 80%) !important;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,.2), 0 2px 6px rgba(0,0,0,.5) !important;
+  border-radius: 8px !important;
+  border: 1px solid #786D88;
+}
+
+.stage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #1A234A 0%, #2E1B4E 100%);
+  border: 1.5px solid #5AA9E6;
+  color: #8BF0D2;
+  font-size: .82rem;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(90, 169, 230, .3);
+}
+
+.lives-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #261B2E;
+  border: 1.5px solid #FF6B4A;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+.lives-label {
+  font-size: .75rem;
+  font-weight: 800;
+  color: #FFA590;
+  margin-right: 2px;
+  letter-spacing: .03em;
+}
+.heart-icon {
+  font-size: .88rem;
+  transition: transform .2s ease, opacity .2s ease;
+}
+.heart-icon.is-lost {
+  opacity: .25;
+  filter: grayscale(1);
+}
+
+.stage-target-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #191724;
+  border: 1.5px solid #3FC1A0;
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  margin-top: 8px;
+  color: #E2E0EC;
+}
+.stage-target-icon {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  filter: drop-shadow(0 0 6px #5AA9E6);
+}
+.stage-target-info {
+  display: flex;
+  flex-direction: column;
+}
+.stage-target-title {
+  font-size: .72rem;
+  text-transform: uppercase;
+  color: #3FC1A0;
+  font-weight: 800;
+  letter-spacing: .06em;
+}
+.stage-target-text {
+  font-size: .9rem;
+  font-weight: 700;
+  color: #FFFFFF;
 }

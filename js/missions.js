@@ -693,6 +693,178 @@
         'Dentro del for digita chispa.avanzar() y luego if chispa.hay_pared(): con chispa.girar_derecha().'
       ],
       praise: '¡Completaste el reto supremo de código escrito! Código puro, sin bloques, sin trampas. ¡Felicitaciones!'
+    }),
+
+    /* ================= LECCIÓN 8 · Misión Espacial: Rescate de la Nave (5 Stages, 8 Vidas, Solo Código) ================= */
+    mk({
+      id: 'space1',
+      lesson: 'l8',
+      title: 'Stage 1: Campo de Meteoritos',
+      concept: 'Misión Espacial',
+      goal: 'STAGE 1/5: La nave nodriza averiada está al este. Digita el código para esquivar los asteroides y llegar.',
+      learn: '¡Cruzaste el cinturón de meteoritos! Cada orden digitada con precisión mantiene a salvo los escudos de tu traje.',
+      tip: 'Digita chispa.avanzar() y los giros con el teclado. ¡Cuidado con chocar con los meteoritos o perderás vidas!',
+      grid: [
+        '.......',
+        '.R.#.F.',
+        '..*#*..',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right'],
+      maxBlocks: 20,
+      pureTyping: true,
+      spaceMission: true,
+      stageNum: 1,
+      targetDesc: 'Nave averiada en (5,1) detrás de los meteoritos',
+      solution: [
+        { type: 'right' }, { type: 'move' },
+        { type: 'left' }, { type: 'move' },
+        { type: 'right' }, { type: 'move' },
+        { type: 'left' }, { type: 'move' }, { type: 'move' },
+        { type: 'left' }, { type: 'move' }, { type: 'move' },
+        { type: 'right' }, { type: 'move' }
+      ],
+      hints: [
+        'Desciende para evitar el primer muro de meteoritos.',
+        'Avanza por el sector inferior recogiendo los núcleos de energía y sube hacia la nave.'
+      ],
+      praise: '¡Stage 1 superado sin perder escudos!'
+    }),
+
+    mk({
+      id: 'space2',
+      lesson: 'l8',
+      title: 'Stage 2: Barrera de Rayos Láser',
+      concept: 'Misión Espacial',
+      goal: 'STAGE 2/5: Rayos láser de defensa cortan el paso. Digita un zigzag perfecto en Python para alcanzar la nave.',
+      learn: '¡Has sorteado la red de láseres espaciales! La precisión de tus órdenes escritas salvó la misión.',
+      tip: 'Digita las sentencias una a una. Revisa bien antes de ejecutar para no perder vidas.',
+      grid: [
+        '.......',
+        '.R*....',
+        '..#.*F.',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right'],
+      maxBlocks: 16,
+      pureTyping: true,
+      spaceMission: true,
+      stageNum: 2,
+      targetDesc: 'Nave nodriza en (5,2) tras la barrera láser',
+      solution: [
+        { type: 'move' }, { type: 'move' },
+        { type: 'right' }, { type: 'move' },
+        { type: 'left' }, { type: 'move' }, { type: 'move' }
+      ],
+      hints: [
+        'Avanza dos veces para recoger el primer núcleo.',
+        'Gira a la derecha, desciende un paso, gira a la izquierda y avanza dos veces a la nave.'
+      ],
+      praise: '¡Maniobra evasiva de nivel estelar! Escudos intactos.'
+    }),
+
+    mk({
+      id: 'space3',
+      lesson: 'l8',
+      title: 'Stage 3: Sector Extraterrestre',
+      concept: 'Misión Espacial',
+      goal: 'STAGE 3/5: Estructuras alienígenas bloquean el camino. Usa un bucle for digitado para atravesar el corredor.',
+      learn: '¡Atravesaste la base alienígena! El bucle for escrito a mano te ahorró tiempo y líneas de navegación.',
+      tip: 'Escribe: for i in range(2): con indentación de 4 espacios.',
+      grid: [
+        '......',
+        '.R*...',
+        '..*...',
+        '...*F.',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat'],
+      maxBlocks: 16,
+      pureTyping: true,
+      spaceMission: true,
+      stageNum: 3,
+      targetDesc: 'Nave averiada en (4,3) al final del corredor alienígena',
+      solution: [
+        { type: 'repeat', times: 2, do: [
+          { type: 'move' }, { type: 'right' }, { type: 'move' }, { type: 'left' }
+        ]},
+        { type: 'move' }
+      ],
+      hints: [
+        'Usa for i in range(2): con chispa.avanzar(), chispa.girar_derecha(), chispa.avanzar() y chispa.girar_izquierda().',
+        'Al salir del bucle, digita una orden más de avanzar hacia la nave.'
+      ],
+      praise: '¡Programaste el piloto automático alienígena a la perfección!'
+    }),
+
+    mk({
+      id: 'space4',
+      lesson: 'l8',
+      title: 'Stage 4: Lluvia de Asteroides y Escáner',
+      concept: 'Misión Espacial',
+      goal: 'STAGE 4/5: Meteoritos cambiantes frente a la nave. Digita un condicional if para detectar asteroides con el radar.',
+      learn: '¡El escáner de radar espacial evitó colisiones fatales! Tu condicional if salvó la vida de Chispa.',
+      tip: 'Digita: for i in range(4): y dentro if chispa.hay_pared(): para girar der.',
+      grid: [
+        '.......',
+        '.R.*.#.',
+        '....F..',
+        '.......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat', 'ifwall'],
+      maxBlocks: 16,
+      pureTyping: true,
+      spaceMission: true,
+      stageNum: 4,
+      targetDesc: 'Nave en (4,2) protegida por escombros y radar',
+      solution: [
+        { type: 'repeat', times: 4, do: [
+          { type: 'move' }, { type: 'ifwall' }
+        ]}
+      ],
+      hints: [
+        'Escribe un bucle for i in range(4):',
+        'Adentro coloca chispa.avanzar() e if chispa.hay_pared(): chispa.girar_derecha().'
+      ],
+      praise: '¡Radar activado! Esquivaste los asteroides sin perder energía.'
+    }),
+
+    mk({
+      id: 'space5',
+      lesson: 'l8',
+      title: 'Stage 5: Rescate Final de la Nave Espacial',
+      concept: 'Misión Espacial',
+      goal: 'STAGE FINAL 5/5: ¡La nave nodriza está a la vista! Recoge todos los núcleos de plasma y acopla a Chispa para el rescate.',
+      learn: '¡MISIÓN CUMPLIDA! Has rescatado la nave espacial dañada superando los 5 sectores con tu código puro.',
+      tip: 'Digita el plan de vuelo completo con precisión: avanza por el perímetro recogiendo los núcleos hasta la nave.',
+      grid: [
+        '......',
+        '.R**..',
+        '.#.*..',
+        '.F*...',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat'],
+      maxBlocks: 20,
+      pureTyping: true,
+      spaceMission: true,
+      stageNum: 5,
+      targetDesc: 'Cabina de mando de la Nave Nodriza en (1,3)',
+      solution: [
+        { type: 'move' }, { type: 'move' },
+        { type: 'right' }, { type: 'move' }, { type: 'move' },
+        { type: 'right' }, { type: 'move' }, { type: 'move' }
+      ],
+      hints: [
+        'Avanza dos veces al este, gira al sur y baja dos pasos.',
+        'Gira al oeste, avanza dos veces hacia la cabina de rescate.'
+      ],
+      praise: '¡HÉROE ESPACIAL! La nave nodriza ha sido rescatada con éxito gracias a tu código.'
     })
   ];
 
