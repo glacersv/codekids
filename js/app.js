@@ -958,24 +958,6 @@
     var isPureTyping = !!m.pureTyping || m.lesson === 'l7' || isSpaceMission;
     var isTextMode = isPureTyping || (m.lesson === 'l6' || store.settings.codeMode === 'text');
 
-    var modeBtn = h('button', {
-      class: 'chip chip--mini is-on',
-      id: 'mode-switch-btn',
-      type: 'button',
-      style: 'margin-left:auto;font-weight:bold' + (isPureTyping ? ';display:none' : '')
-    }, isTextMode ? '⌨️ Digitar Código (Python)' : '🧩 Modo Bloques');
-
-    var coderHead = h('div', { class: 'coder__head' }, [
-      h('span', {}, isSpaceMission ? '🚀 Terminal de Vuelo Espacial' : (isPureTyping ? 'Terminal de Código Puro' : (isTextMode ? 'Terminal Python' : 'Mi programa'))),
-      h('span', { class: 'counter', id: 'counter' }, '0 líneas'),
-      stepToggle,
-      modeBtn
-    ]);
-
-    var runBtn = h('button', { class: 'btn btn--primary btn--run', id: 'run-btn', type: 'button' }, [
-      h('span', { 'aria-hidden': 'true' }, '▶'), 'Ejecutar'
-    ]);
-
     /* Barra de Vidas para la misión espacial (8 vidas) */
     var spaceLivesWidget = null;
     if (isSpaceMission) {
@@ -1021,6 +1003,39 @@
       goalRow,
       targetPanel,
       h('p', { class: 'hint-box', id: 'hint-box', hidden: 'hidden' })
+    ]);
+
+    var board = h('div', { class: 'board', id: 'board' });
+    var feedback = h('div', { class: 'feedback', id: 'feedback', role: 'status', 'aria-live': 'polite' });
+
+    var stage = h('section', { class: 'stage' }, [
+      goal,
+      h('div', { class: 'board-wrap' }, [board]),
+      feedback
+    ]);
+
+    var stepToggle = h('button', {
+      class: 'chip chip--mini' + (S.stepMode ? ' is-on' : ''),
+      id: 'step-toggle', type: 'button',
+      'aria-pressed': S.stepMode ? 'true' : 'false'
+    }, '🐢 Paso a paso');
+
+    var modeBtn = h('button', {
+      class: 'chip chip--mini is-on',
+      id: 'mode-switch-btn',
+      type: 'button',
+      style: 'margin-left:auto;font-weight:bold' + (isPureTyping ? ';display:none' : '')
+    }, isTextMode ? '⌨️ Digitar Código (Python)' : '🧩 Modo Bloques');
+
+    var coderHead = h('div', { class: 'coder__head' }, [
+      h('span', {}, isSpaceMission ? '🚀 Terminal de Vuelo Espacial' : (isPureTyping ? 'Terminal de Código Puro' : (isTextMode ? 'Terminal Python' : 'Mi programa'))),
+      h('span', { class: 'counter', id: 'counter' }, '0 líneas'),
+      stepToggle,
+      modeBtn
+    ]);
+
+    var runBtn = h('button', { class: 'btn btn--primary btn--run', id: 'run-btn', type: 'button' }, [
+      h('span', { 'aria-hidden': 'true' }, '▶'), 'Ejecutar'
     ]);
 
     /* Editor de texto para digitar sentencias */
