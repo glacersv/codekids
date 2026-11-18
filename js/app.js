@@ -963,17 +963,18 @@
     }, '🐢 Paso a paso');
 
     /* MODO: 'text' (solo digitar código) vs 'blocks' */
-    var isTextMode = (m.lesson === 'l6' || store.settings.codeMode === 'text');
+    var isPureTyping = !!m.pureTyping || m.lesson === 'l7';
+    var isTextMode = isPureTyping || (m.lesson === 'l6' || store.settings.codeMode === 'text');
 
     var modeBtn = h('button', {
       class: 'chip chip--mini is-on',
       id: 'mode-switch-btn',
       type: 'button',
-      style: 'margin-left:auto;font-weight:bold'
+      style: 'margin-left:auto;font-weight:bold' + (isPureTyping ? ';display:none' : '')
     }, isTextMode ? '⌨️ Digitar Código (Python)' : '🧩 Modo Bloques');
 
     var coderHead = h('div', { class: 'coder__head' }, [
-      h('span', {}, isTextMode ? 'Terminal Python' : 'Mi programa'),
+      h('span', {}, isPureTyping ? 'Terminal de Código Puro' : (isTextMode ? 'Terminal Python' : 'Mi programa')),
       h('span', { class: 'counter', id: 'counter' }, '0 líneas'),
       stepToggle,
       modeBtn
@@ -986,7 +987,7 @@
     /* Editor de texto para digitar sentencias */
     var codeHelperButtons = h('div', {
       class: 'code-quick-helpers',
-      style: 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px'
+      style: (isPureTyping ? 'display:none;' : 'display:flex;') + 'gap:6px;flex-wrap:wrap;margin-bottom:8px'
     }, [
       h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('chispa.avanzar()\n'); } }, '+ avanzar()'),
       h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('chispa.girar_derecha()\n'); } }, '+ girar_derecha()'),
@@ -1000,15 +1001,17 @@
       style: (isTextMode ? 'display:flex;' : 'display:none;') + 'flex-direction:column;flex:1;background:#26232E;border-radius:var(--r-md);padding:14px;box-shadow:inset 0 2px 6px rgba(0,0,0,.4)'
     }, [
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px' }, [
-        h('span', { style: 'font-weight:bold;color:#3FC1A0;font-size:.9rem' }, '💻 Escribe tus órdenes en Python:'),
-        h('span', { style: 'font-size:.74rem;color:#FFC94D' }, '1 orden por renglón')
+        h('span', { style: 'font-weight:bold;color:#3FC1A0;font-size:.9rem' }, isPureTyping ? '⌨️ Digita cada orden directamente con el teclado:' : '💻 Escribe tus órdenes en Python:'),
+        h('span', { style: 'font-size:.74rem;color:#FFC94D' }, isPureTyping ? '⚡ Sin bloques ni botones de ayuda' : '1 orden por renglón')
       ]),
       codeHelperButtons,
       h('textarea', {
         id: 'code-editor-area',
         spellcheck: false,
         style: 'flex:1;min-height:220px;background:#1A1820;color:#8BF0D2;border:2px solid #3FC1A0;border-radius:10px;padding:12px;font-family:Consolas, Monaco, monospace;font-size:.95rem;line-height:1.5;resize:vertical',
-        placeholder: '# Digita aquí las órdenes para Chispa:\nchispa.avanzar()\nchispa.avanzar()\nchispa.girar_derecha()'
+        placeholder: isPureTyping
+          ? '# MODO CÓDIGO PURO: Digita aquí sin atajos\nchispa.avanzar()\nchispa.girar_derecha()'
+          : '# Digita aquí las órdenes para Chispa:\nchispa.avanzar()\nchispa.avanzar()\nchispa.girar_derecha()'
       }),
       h('div', {
         id: 'code-editor-status',

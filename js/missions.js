@@ -600,6 +600,99 @@
         'En Python se lee: if chispa.hay_pared(): chispa.girar_derecha().'
       ],
       praise: '¡Estructura de decisión completada! Uniste for e if como un programador profesional.'
+    }),
+
+    /* ================= LECCIÓN 7 · Modo Hacker: Solo Digitar (Sin Asistencias) ================= */
+    mk({
+      id: 'type1',
+      lesson: 'l7',
+      title: 'Solo Teclado: El Camino Escalonado',
+      concept: 'Escritura Pura',
+      goal: 'No hay botones de ayuda ni bloques. Digita línea por línea las sentencias exactas para recoger las 4 estrellas.',
+      learn: '¡Escribiste código real desde cero! Cuando programas con el teclado adquieres la velocidad de un verdadero desarrollador.',
+      tip: 'Digita chispa.avanzar() y los giros chispa.girar_derecha() o chispa.girar_izquierda().',
+      grid: [
+        '......',
+        '.R**..',
+        '...**.',
+        '....F.',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right'],
+      maxBlocks: 16,
+      pureTyping: true,
+      solution: [
+        { type: 'move' }, { type: 'move' }, { type: 'right' },
+        { type: 'move' }, { type: 'left' }, { type: 'move' },
+        { type: 'right' }, { type: 'move' }
+      ],
+      hints: [
+        'Escribe en orden: dos avances, giro a la derecha, avance, giro a la izquierda, avance, giro a la derecha y avance.',
+        'Recuerda colocar los paréntesis () al final de cada método.'
+      ],
+      praise: '¡8 líneas de código escritas a mano sin fallar! Eres todo un programador.'
+    }),
+
+    mk({
+      id: 'type2',
+      lesson: 'l7',
+      title: 'Solo Teclado: Bucle for sin Ayuda',
+      concept: 'Escritura Pura',
+      goal: 'Digita un bucle for en Python con su sangría de 4 espacios para recorrer la pista y recoger las estrellas.',
+      learn: 'Escribir bucles a mano y respetar los dos puntos : y la sangría es la habilidad central en Python.',
+      tip: 'Escribe: for i in range(3): y abajo con sangría: chispa.avanzar(), chispa.avanzar(), chispa.girar_derecha().',
+      grid: [
+        '.....',
+        '.R*..',
+        '...*.',
+        '.F*..',
+        '.....'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat'],
+      maxBlocks: 16,
+      pureTyping: true,
+      solution: [
+        { type: 'repeat', times: 3, do: [
+          { type: 'move' }, { type: 'move' }, { type: 'right' }
+        ]}
+      ],
+      hints: [
+        'Línea 1: for i in range(3):',
+        'Líneas con espacios: chispa.avanzar(), chispa.avanzar(), chispa.girar_derecha().'
+      ],
+      praise: '¡Digitaste un bucle for impecable con sangría y dos puntos!'
+    }),
+
+    mk({
+      id: 'type3',
+      lesson: 'l7',
+      title: 'Solo Teclado: El Centinela Inteligente',
+      concept: 'Escritura Pura',
+      goal: 'Digita un bucle con un if condicional adentro para sortear el muro y ganar la misión.',
+      learn: 'Has programado estructuras anidadas (un if dentro de un for) directamente desde el teclado.',
+      tip: 'Combina for i in range(4): con chispa.avanzar() y if chispa.hay_pared(): chispa.girar_derecha().',
+      grid: [
+        '......',
+        '.R*.#.',
+        '..#F..',
+        '......'
+      ],
+      startDir: 'east',
+      palette: ['move', 'left', 'right', 'repeat', 'ifwall'],
+      maxBlocks: 16,
+      pureTyping: true,
+      solution: [
+        { type: 'repeat', times: 4, do: [
+          { type: 'move' }, { type: 'ifwall' }
+        ]}
+      ],
+      hints: [
+        'Digita el for en la primera línea.',
+        'Dentro del for digita chispa.avanzar() y luego if chispa.hay_pared(): con chispa.girar_derecha().'
+      ],
+      praise: '¡Completaste el reto supremo de código escrito! Código puro, sin bloques, sin trampas. ¡Felicitaciones!'
     })
   ];
 

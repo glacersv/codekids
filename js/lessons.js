@@ -204,6 +204,33 @@
         note: 'En Python esto se escribe línea a línea: avanzar, avanzar, girar a la izquierda y avanzar.'
       },
       retos: ['py1', 'py2', 'py3', 'py4']
+    },
+
+    /* ==================== LECCIÓN 7 · Modo Teclado Puro ==================== */
+    {
+      id: 'l7',
+      num: 7,
+      title: 'Modo Código Puro: Sin Bloques',
+      concept: 'Solo Teclado',
+      idea: 'La verdadera prueba de un programador: tu pantalla, tu teclado y tus órdenes escritas sin atajos ni bloques.',
+      bullets: [
+        'En este nivel los bloques y las ayudas visuales desaparecen por completo.',
+        'Escribe las órdenes con exactitud: chispa.avanzar(), chispa.girar_derecha() o chispa.girar_izquierda().',
+        '¡Siente el poder de controlar al robot directamente desde tus dedos!'
+      ],
+      read: 'Bienvenido al nivel de programación pura. Ya no hay piezas de rompecabezas para arrastrar ni botones de ayuda. Tienes un editor en blanco y un teclado. Escribe tus sentencias de Python, ejecuta tu código y demuestra que dominas la programación real.',
+      example: {
+        caption: 'Un programa escrito a mano con 3 avances en Python puro.',
+        grid: ['.....', '.R**F', '.....'],
+        startDir: 'east',
+        program: [
+          { type: 'move' },
+          { type: 'move' },
+          { type: 'move' }
+        ],
+        note: 'Escribes las 3 líneas con el teclado y pulsas Ejecutar.'
+      },
+      retos: ['type1', 'type2', 'type3']
     }
   ];
 
