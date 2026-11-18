@@ -950,47 +950,72 @@
       'aria-pressed': S.stepMode ? 'true' : 'false'
     }, '🐢 Paso a paso');
 
-    var codeModeToggle = h('button', {
-      class: 'chip chip--mini' + (S.mode === 'python' ? ' is-on' : ''),
-      id: 'code-mode-toggle', type: 'button',
-      style: 'margin-left:auto',
-      'aria-pressed': S.mode === 'python' ? 'true' : 'false'
-    }, S.mode === 'python' ? '🐍 Python Activo' : '🐍 Ver / Escribir Python');
+    /* MODO: 'text' (solo digitar código) vs 'blocks' */
+    var isTextMode = (m.lesson === 'l6' || store.settings.codeMode === 'text');
+
+    var modeBtn = h('button', {
+      class: 'chip chip--mini is-on',
+      id: 'mode-switch-btn',
+      type: 'button',
+      style: 'margin-left:auto;font-weight:bold'
+    }, isTextMode ? '⌨️ Digitar Código (Python)' : '🧩 Modo Bloques');
 
     var coderHead = h('div', { class: 'coder__head' }, [
-      h('span', {}, 'Mi programa'),
-      h('span', { class: 'counter', id: 'counter' }, '0 bloques'),
+      h('span', {}, isTextMode ? 'Terminal Python' : 'Mi programa'),
+      h('span', { class: 'counter', id: 'counter' }, '0 líneas'),
       stepToggle,
-      codeModeToggle
+      modeBtn
     ]);
 
     var runBtn = h('button', { class: 'btn btn--primary btn--run', id: 'run-btn', type: 'button' }, [
       h('span', { 'aria-hidden': 'true' }, '▶'), 'Ejecutar'
     ]);
 
-    /* Panel de Python en vivo y editable */
-    var pyPanel = h('div', {
-      class: 'py-live-panel', id: 'py-live-panel',
-      style: 'display:none;background:#26232E;color:#FDEFDD;border-radius:var(--r-md);padding:12px;margin-bottom:10px;font-family:monospace;font-size:.85rem;box-shadow:inset 0 2px 4px rgba(0,0,0,.4)'
+    /* Editor de texto para digitar sentencias */
+    var codeHelperButtons = h('div', {
+      class: 'code-quick-helpers',
+      style: 'display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px'
     }, [
-      h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #443E50;padding-bottom:6px' }, [
-        h('span', { style: 'font-weight:bold;color:#3FC1A0' }, '🐍 Editor de Código Python'),
-        h('span', { style: 'font-size:.72rem;color:#8A8299' }, 'Se sincroniza en tiempo real')
+      h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('chispa.avanzar()\n'); } }, '+ avanzar()'),
+      h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('chispa.girar_derecha()\n'); } }, '+ girar_derecha()'),
+      h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('chispa.girar_izquierda()\n'); } }, '+ girar_izquierda()'),
+      h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('for i in range(3):\n    chispa.avanzar()\n'); } }, '+ bucle for'),
+      h('button', { class: 'chip chip--mini', type: 'button', onclick: function () { insertCodeSnippet('if chispa.hay_pared():\n    chispa.girar_derecha()\n'); } }, '+ condicional if')
+    ]);
+
+    var pyTextEditor = h('div', {
+      class: 'py-full-editor', id: 'py-full-editor',
+      style: (isTextMode ? 'display:flex;' : 'display:none;') + 'flex-direction:column;flex:1;background:#26232E;border-radius:var(--r-md);padding:14px;box-shadow:inset 0 2px 6px rgba(0,0,0,.4)'
+    }, [
+      h('div', { style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:10px' }, [
+        h('span', { style: 'font-weight:bold;color:#3FC1A0;font-size:.9rem' }, '💻 Escribe tus órdenes en Python:'),
+        h('span', { style: 'font-size:.74rem;color:#FFC94D' }, '1 orden por renglón')
       ]),
+      codeHelperButtons,
       h('textarea', {
-        id: 'py-editor-input',
+        id: 'code-editor-area',
         spellcheck: false,
-        style: 'width:100%;height:130px;background:#1A1820;color:#8BF0D2;border:1px solid #3FC1A0;border-radius:8px;padding:8px;font-family:Consolas, Monaco, monospace;font-size:.86rem;line-height:1.4;resize:vertical',
-        placeholder: '# Escribe aquí tus sentencias de Python:\nchispa.avanzar()\nchispa.girar_derecha()'
+        style: 'flex:1;min-height:220px;background:#1A1820;color:#8BF0D2;border:2px solid #3FC1A0;border-radius:10px;padding:12px;font-family:Consolas, Monaco, monospace;font-size:.95rem;line-height:1.5;resize:vertical',
+        placeholder: '# Digita aquí las órdenes para Chispa:\nchispa.avanzar()\nchispa.avanzar()\nchispa.girar_derecha()'
       }),
-      h('div', { id: 'py-editor-err', style: 'color:#FF6B4A;font-size:.76rem;margin-top:6px;display:none' })
+      h('div', {
+        id: 'code-editor-status',
+        style: 'color:#FF6B4A;font-size:.8rem;margin-top:8px;font-weight:bold;display:none;background:#3A1B1F;padding:8px 10px;border-radius:8px'
+      })
+    ]);
+
+    var blocksWrapper = h('div', {
+      id: 'blocks-wrapper',
+      style: isTextMode ? 'display:none;' : 'display:flex;flex-direction:column;flex:1;'
+    }, [
+      h('div', { class: 'palette', id: 'palette' }),
+      h('div', { class: 'prog-scroll' }, [h('div', { class: 'prog', id: 'prog' })])
     ]);
 
     var coder = h('aside', { class: 'coder' }, [
       coderHead,
-      pyPanel,
-      h('div', { class: 'palette', id: 'palette' }),
-      h('div', { class: 'prog-scroll' }, [h('div', { class: 'prog', id: 'prog' })]),
+      pyTextEditor,
+      blocksWrapper,
       h('div', { class: 'coder__actions' }, [
         runBtn,
         h('button', { class: 'icon-btn icon-btn--wide', id: 'undo-btn', type: 'button', title: 'Deshacer', 'aria-label': 'Deshacer' }, '↶'),
@@ -1019,38 +1044,50 @@
       resetRunButton();
     });
 
-    codeModeToggle.addEventListener('click', function () {
-      var panel = $('#py-live-panel');
-      var input = $('#py-editor-input');
-      var isVisible = panel.style.display !== 'none';
-      if (isVisible) {
-        panel.style.display = 'none';
-        codeModeToggle.classList.remove('is-on');
-        codeModeToggle.textContent = '🐍 Ver / Escribir Python';
-      } else {
-        panel.style.display = 'block';
-        codeModeToggle.classList.add('is-on');
-        codeModeToggle.textContent = '🐍 Ocultar Python';
-        if (input) input.value = toCode(S.program);
-      }
+    modeBtn.addEventListener('click', function () {
+      isTextMode = !isTextMode;
+      store.settings.codeMode = isTextMode ? 'text' : 'blocks';
+      save();
+      modeBtn.textContent = isTextMode ? '⌨️ Digitar Código (Python)' : '🧩 Modo Bloques';
+      var pyEd = $('#py-full-editor');
+      var blkEd = $('#blocks-wrapper');
+      if (pyEd) pyEd.style.display = isTextMode ? 'flex' : 'none';
+      if (blkEd) blkEd.style.display = isTextMode ? 'none' : 'flex';
+      var txtArea = $('#code-editor-area');
+      if (txtArea && isTextMode) txtArea.value = toCode(S.program);
       Sound.tap();
+      renderProgram();
     });
 
-    var pyInput = $('#py-editor-input');
-    if (pyInput) {
-      pyInput.addEventListener('input', function () {
-        var parsed = parsePython(pyInput.value);
-        var errBox = $('#py-editor-err');
+    var txtArea = $('#code-editor-area');
+    if (txtArea) {
+      txtArea.value = toCode(S.program);
+      txtArea.addEventListener('input', function () {
+        var parsed = parsePython(txtArea.value);
+        var errBox = $('#code-editor-status');
         if (parsed.errors.length) {
           errBox.style.display = 'block';
-          errBox.textContent = '⚠️ Línea ' + parsed.errors[0].line + ': ' + parsed.errors[0].text + ' no reconocida. Usa chispa.avanzar(), chispa.girar_derecha(), etc.';
+          errBox.textContent = '⚠️ Línea ' + parsed.errors[0].line + ': ' + parsed.errors[0].text + ' no reconocida. Ej: chispa.avanzar()';
         } else {
           errBox.style.display = 'none';
           pushUndo();
           S.program = parsed.program;
-          renderProgram(true); // true = no sobreescribir el textarea mientras el usuario escribe
+          renderProgram(true);
         }
       });
+    }
+
+    function insertCodeSnippet(snippet) {
+      if (!txtArea) return;
+      var start = txtArea.selectionStart || txtArea.value.length;
+      var end = txtArea.selectionEnd || txtArea.value.length;
+      var prev = txtArea.value;
+      txtArea.value = prev.slice(0, start) + snippet + prev.slice(end);
+      txtArea.focus();
+      txtArea.selectionStart = txtArea.selectionEnd = start + snippet.length;
+      var evt = new Event('input', { bubbles: true });
+      txtArea.dispatchEvent(evt);
+      Sound.place();
     }
 
     S.board = mountBoard(S.level, board);
@@ -1174,9 +1211,9 @@
     }
     renderPalette();
 
-    /* Sincronizar el editor lateral de Python en vivo */
+    /* Sincronizar el editor de texto de Python */
     if (!skipTextSync) {
-      var pyInput = $('#py-editor-input');
+      var pyInput = $('#code-editor-area');
       if (pyInput) pyInput.value = toCode(S.program);
     }
   }
