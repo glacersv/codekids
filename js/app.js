@@ -371,19 +371,31 @@
       list.appendChild(card);
     });
 
-    var foot = h('div', { class: 'home__foot' }, [
-      btn('📖 Teoría & Evaluación', 'btn--primary', function () { renderTheory(); showView('theory'); }),
-      btn('📚 Diccionario de Sentencias', 'btn--soft', function () { renderDict(); showView('dict'); }),
-      btn('🧩 Rompecabezas & Repaso', 'btn--soft', function () { renderQuiz(); showView('quiz'); }),
-      btn('🎨 Zona libre', 'btn--soft', openFreePlay),
-      btn('📊 Mi progreso', 'btn--soft', function () { renderProgress(); showView('progress'); }),
-      btn('❓ Cómo se juega', 'btn--soft', openHowTo)
+    var sideNav = h('aside', { class: 'home__sidebar' }, [
+      h('div', { class: 'section-head', style: 'margin-bottom:12px' }, [
+        h('h2', { style: 'font-size:1.1rem;margin:0' }, '🧭 Recursos y Práctica'),
+        h('p', { style: 'font-size:.8rem;margin:0;color:var(--muted)' }, 'Herramientas de aprendizaje')
+      ]),
+      btn('📖 Teoría & Evaluación', 'btn--primary home__nav-btn', function () { renderTheory(); showView('theory'); }),
+      btn('📚 Diccionario de Sentencias', 'btn--soft home__nav-btn', function () { renderDict(); showView('dict'); }),
+      btn('🧩 Rompecabezas & Repaso', 'btn--soft home__nav-btn', function () { renderQuiz(); showView('quiz'); }),
+      btn('🎨 Zona libre de código', 'btn--soft home__nav-btn', openFreePlay),
+      btn('📊 Mi progreso', 'btn--soft home__nav-btn', function () { renderProgress(); showView('progress'); }),
+      btn('❓ Cómo se juega', 'btn--ghost home__nav-btn', openHowTo)
+    ]);
+
+    var mainContent = h('div', { class: 'home__main' }, [
+      h('div', { class: 'home__cta' }, [cta]),
+      list
+    ]);
+
+    var homeLayout = h('div', { class: 'home__layout' }, [
+      sideNav,
+      mainContent
     ]);
 
     host.appendChild(hero);
-    host.appendChild(h('div', { class: 'home__cta' }, [cta]));
-    host.appendChild(list);
-    host.appendChild(foot);
+    host.appendChild(homeLayout);
   }
 
   /* ==================================================================
