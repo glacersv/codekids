@@ -13,6 +13,7 @@
   var LESSONS = window.CodeKids.LESSONS;
 
   var STORE_KEY = 'codekids.v3';
+  var STUDIO_KEY = 'codekids.studio.v1';
 
   /* ==================================================================
      Utilidades
@@ -104,7 +105,11 @@
      Almacenamiento
      ================================================================== */
   function defaults() {
-    return { name: '', stars: {}, breaks: 0, spaceLives: 8, settings: { sound: true, calm: false, step: false } };
+    /* Apoyo por defecto para atención: silencio y modo calma. */
+    return {
+      name: '', stars: {}, breaks: 0, spaceLives: 8,
+      settings: { sound: false, calm: true, step: false, codeMode: 'blocks' }
+    };
   }
 
   var store = (function load() {
@@ -116,12 +121,15 @@
       if (!p || typeof p !== 'object') return base;
       base.name = typeof p.name === 'string' ? p.name.slice(0, 16) : '';
       base.stars = p.stars && typeof p.stars === 'object' ? p.stars : {};
-      base.breaks = Number(p.breaks) || 0;
-      base.spaceLives = typeof p.spaceLives === 'number' ? p.spaceLives : 8;
+      base.breaks = Math.max(0, Number(p.breaks) || 0);
+      base.spaceLives = Number.isFinite(p.spaceLives)
+        ? Math.min(8, Math.max(0, Math.floor(p.spaceLives)))
+        : 8;
       if (p.settings) {
-        base.settings.sound = p.settings.sound !== false;
-        base.settings.calm = !!p.settings.calm;
+        base.settings.sound = p.settings.sound === true;
+        base.settings.calm = p.settings.calm !== false;
         base.settings.step = !!p.settings.step;
+        base.settings.codeMode = p.settings.codeMode === 'text' ? 'text' : 'blocks';
       }
       return base;
     } catch (e) { return base; }
@@ -144,7 +152,7 @@
           if (!AC) return null;
           ctx = new AC();
         }
-        if (ctx.state === 'suspended') ctx.resume();
+        if (ctx.state === 'suspended' && ctx.resume) ctx.resume().catch(function () {});
         return ctx;
       } catch (e) { return null; }
     }
@@ -212,6 +220,8 @@
     finished: false,
     timer: null,
     stepMode: false,
+    codeError: false,
+    attentionTimer: null,
     escHandler: null
   };
 
@@ -263,12 +273,25 @@
   /* ==================================================================
      Navegación
      ================================================================== */
+  function syncHash(hash) {
+    try {
+      if (hash) window.history.replaceState(null, '', hash);
+      else window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    } catch (e) { /* file:// puede no permitirlo */ }
+  }
+
   function showView(name) {
+    if (S.attentionTimer) { clearInterval(S.attentionTimer); S.attentionTimer = null; }
     S.view = name;
-    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory', 'dict'].forEach(function (v) {
+    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory', 'dict', 'quest'].forEach(function (v) {
       var node = document.getElementById('view-' + v);
       if (node) node.hidden = (v !== name);
     });
+    var staticHash = {
+      home: '', progress: '#/progreso', quiz: '#/repaso',
+      theory: '#/teoria', dict: '#/diccionario'
+    };
+    if (Object.prototype.hasOwnProperty.call(staticHash, name)) syncHash(staticHash[name]);
     window.scrollTo(0, 0);
   }
 
@@ -308,6 +331,276 @@
   /* ==================================================================
      INICIO
      ================================================================== */
+  /* ==================================================================
+     APOYOS DE ATENCIÓN  ·  AHORA / DESPUÉS + TEMPORIZADOR
+     ================================================================== */
+  function attentionWidget(m, lesson, retoIdx) {
+    var next = 'tu creación libre';
+    if (lesson && retoIdx >= 0 && lesson.retos[retoIdx + 1]) {
+      var nm = findMission(lesson.retos[retoIdx + 1]);
+      if (nm) next = nm.title;
+    }
+    var timer = h('button', { class: 'visual-timer', type: 'button', title: 'Inicia un temporizador de 10 minutos' }, '⏱ 10 min');
+    timer.addEventListener('click', function () {
+      if (S.attentionTimer) {
+        clearInterval(S.attentionTimer);
+        S.attentionTimer = null;
+        timer.textContent = '⏱ 10 min';
+        return;
+      }
+      var end = Date.now() + 10 * 60 * 1000;
+      S.attentionTimer = setInterval(function () {
+        var left = Math.max(0, Math.ceil((end - Date.now()) / 60000));
+        timer.textContent = left ? '⏱ ' + left + ' min' : '🧘 Pausa';
+        if (!left) {
+          clearInterval(S.attentionTimer);
+          S.attentionTimer = null;
+          setFeedback('info', '🧘', 'Diez minutos: levanta, estira y respira. Luego seguimos.');
+        }
+      }, 1000);
+    });
+    return h('div', { class: 'now-next' }, [
+      h('span', { class: 'now-next__now' }, 'AHORA: ' + m.title),
+      h('span', { class: 'now-next__sep' }, '→'),
+      h('span', {}, 'DESPUÉS: ' + next),
+      timer
+    ]);
+  }
+
+  /* ==================================================================
+     PRIMM: Predecir · Ejecutar · Investigar · Modificar · Crear
+     ================================================================== */
+  function firstBlockOf(list, type) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].type === type) return list[i];
+      if (list[i].do) {
+        var found = firstBlockOf(list[i].do, type);
+        if (found) return found;
+      }
+    }
+    return null;
+  }
+
+  function primmAction(kind) {
+    var m = S.mission;
+    if (kind === 'investiga') {
+      overlay(h('div', { class: 'modal' }, [
+        h('p', { class: 'eyebrow' }, 'PRIMM · 3 preguntas'),
+        h('h2', {}, 'Investiga como un detective'),
+        h('div', { class: 'how-to' }, [
+          h('div', { class: 'how-to__step' }, [h('span', { class: 'how-to__n' }, '1'), h('div', {}, [h('b', {}, '¿Qué pasó?'), h('span', {}, 'Cuenta con tus palabras dónde terminó Chispa.')])]),
+          h('div', { class: 'how-to__step' }, [h('span', { class: 'how-to__n' }, '2'), h('div', {}, [h('b', {}, '¿Qué bloque lo mandó?'), h('span', {}, 'Busca la orden que hizo que girara o avanzara.')])]),
+          h('div', { class: 'how-to__step' }, [h('span', { class: 'how-to__n' }, '3'), h('div', {}, [h('b', {}, '¿Qué cambiarías?'), h('span', {}, 'Sólo UNA cosa. Luego vuelve a probar.')])])
+        ]),
+        h('div', { class: 'modal__actions' }, [
+          h('button', { class: 'btn btn--primary', type: 'button', onclick: closeOverlay }, 'Volver a mi programa')
+        ])
+      ]));
+      return;
+    }
+    if (kind === 'modifica') {
+      var buggy = clone((m && m.solution) || [{ type: 'move' }, { type: 'move' }]);
+      var target = firstBlockOf(buggy, 'move');
+      if (target) target.type = 'left';
+      else {
+        target = firstBlockOf(buggy, 'repeat');
+        if (target) target.times = Math.max(1, (target.times || 2) - 1);
+        else buggy.push({ type: 'right' });
+      }
+      S.program = withIds(buggy);
+      S.focus = [];
+      S.undo = [];
+      S.codeError = false;
+      renderProgram();
+      setFeedback('info', '🔎', 'Cambié una sola orden. Encúentrala, corrígela y prueba otra vez.');
+      return;
+    }
+    S.program = [];
+    S.focus = [];
+    S.undo = [];
+    S.codeError = false;
+    renderProgram();
+    setFeedback('info', '✨', 'Pantalla en blanco. Crea tu propio programa desde cero.');
+  }
+
+  /* ==================================================================
+     ESTUDIO CHISPA · editor propio, proyectos, exportar y compartir
+     ================================================================== */
+  var STUDIO_TEMPLATES = [
+    { name: 'Camino corto', code: 'chispa.avanzar()\nchispa.avanzar()\nchispa.avanzar()\n' },
+    { name: 'Recoge y llega', code: 'chispa.avanzar()\nchispa.avanzar()\nif chispa.hay_pared():\n    chispa.girar_derecha()\nchispa.avanzar()\n' },
+    { name: 'Bucle de 3', code: 'for i in range(3):\n    chispa.avanzar()\n' },
+    { name: 'Misión espacial', code: 'for i in range(3):\n    chispa.avanzar()\n    if chispa.hay_pared():\n        chispa.girar_derecha()\n' }
+  ];
+
+  function studioProjects() {
+    try {
+      var list = JSON.parse(window.localStorage.getItem(STUDIO_KEY) || '[]');
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+
+  function saveStudioProjects(list) {
+    try { window.localStorage.setItem(STUDIO_KEY, JSON.stringify(list.slice(0, 8))); } catch (e) { /* modo privado */ }
+  }
+
+  function encodeCode(code) {
+    try {
+      var bytes = new TextEncoder().encode(code || '');
+      var bin = '';
+      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return window.btoa(bin);
+    } catch (e) { return ''; }
+  }
+
+  function decodeCode(code) {
+    try {
+      var bin = window.atob(code || '');
+      var bytes = new Uint8Array(bin.length);
+      for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    } catch (e) { return ''; }
+  }
+
+  function downloadText(filename, text) {
+    try {
+      var blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) { toast('Tu navegador no permitió descargar el archivo.'); }
+  }
+
+  function openStudio(initialCode) {
+    var projects = studioProjects();
+    var area = h('textarea', {
+      class: 'studio__code', id: 'studio-code', spellcheck: false,
+      placeholder: 'chispa.avanzar()\nchispa.girar_derecha()'
+    });
+    area.value = initialCode || STUDIO_TEMPLATES[0].code;
+    var status = h('p', { class: 'hint-box', id: 'studio-status', hidden: 'hidden' });
+    var nameInput = h('input', {
+      class: 'studio__name', id: 'studio-name', type: 'text',
+      maxlength: '24', placeholder: 'Nombre de mi programa'
+    });
+    var projectList = h('div', { class: 'studio__projects' });
+
+    function currentCode() { return area.value; }
+    function setStatus(text) {
+      status.textContent = text || '';
+      status.hidden = !text;
+    }
+    function refreshList() {
+      clear(projectList);
+      if (!projects.length) {
+        projectList.appendChild(h('p', { class: 'tip-line' }, 'Todavía no guardaste programas. ¡Crea el primero!'));
+        return;
+      }
+      projects.forEach(function (p, i) {
+        var row = h('div', { class: 'studio__project' }, [
+          h('span', {}, p.name || ('Programa ' + (i + 1))),
+          h('button', { class: 'chip chip--mini', type: 'button' }, 'Abrir'),
+          h('button', { class: 'chip chip--mini', type: 'button', 'aria-label': 'Borrar ' + (p.name || i) }, '🗑')
+        ]);
+        row.children[1].addEventListener('click', function () { area.value = p.code; setStatus('Abierto: ' + (p.name || 'Programa ' + (i + 1))); });
+        row.children[2].addEventListener('click', function () {
+          projects.splice(i, 1);
+          saveStudioProjects(projects);
+          refreshList();
+        });
+        projectList.appendChild(row);
+      });
+    }
+
+    var templateSelect = h('select', { class: 'studio__select', id: 'studio-template', 'aria-label': 'Elige una plantilla' });
+    STUDIO_TEMPLATES.forEach(function (t, i) {
+      templateSelect.appendChild(h('option', { value: String(i) }, t.name));
+    });
+    templateSelect.addEventListener('change', function () {
+      area.value = STUDIO_TEMPLATES[Number(templateSelect.value)].code;
+      setStatus('Plantilla cargada. ¡Cámbiale una cosa!');
+    });
+
+    function tryCode() {
+      var parsed = parsePython(currentCode());
+      if (parsed.errors.length) {
+        setStatus('⚠️ Línea ' + parsed.errors[0].line + ': ' + parsed.errors[0].text + '. Corrígela y prueba otra vez.');
+        Sound.error();
+        return;
+      }
+      closeOverlay();
+      openFreePlay();
+      S.program = parsed.program;
+      S.focus = [];
+      S.undo = [];
+      S.codeError = false;
+      renderProgram();
+      setFeedback('ok', '🚀', 'Tu programa está cargado. Toca Ejecutar para probarlo.');
+    }
+
+    function saveProject() {
+      var code = currentCode();
+      var parsed = parsePython(code);
+      if (parsed.errors.length) { setStatus('⚠️ Corrige el código antes de guardar.'); return; }
+      var name = (nameInput.value || '').trim() || ('Mi programa ' + (projects.length + 1));
+      projects.unshift({ name: name.slice(0, 24), code: code, date: Date.now() });
+      saveStudioProjects(projects);
+      nameInput.value = name.slice(0, 24);
+      refreshList();
+      setStatus('✅ Guardado: ' + name);
+      Sound.place();
+    }
+
+    var panel = h('div', { class: 'modal modal--wide studio' }, [
+      h('p', { class: 'eyebrow' }, 'Tu espacio de creación'),
+      h('h2', {}, '🛠️ Estudio Chispa'),
+      h('p', { class: 'lead' }, 'Escribe órdenes, pruébalas y guarda tu programa. No hay nota: sólo tu idea funcionando.'),
+      h('div', { class: 'studio-toolbar' }, [
+        templateSelect,
+        h('button', { class: 'btn btn--primary', type: 'button', onclick: tryCode }, '▶ Probar'),
+        h('button', { class: 'btn btn--soft', type: 'button', onclick: saveProject }, '💾 Guardar'),
+        h('button', {
+          class: 'btn btn--soft', type: 'button', onclick: function () {
+            downloadText((nameInput.value || 'mi-programa').replace(/[^\w-]/g, '_') + '.py', currentCode());
+          }
+        }, '⬇ Bajar .py'),
+        h('button', {
+          class: 'btn btn--soft', type: 'button', onclick: function () {
+            var hash = '#/studio/' + encodeCode(currentCode());
+            syncHash(hash);
+            var link = window.location.href;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(link).then(function () { setStatus('🔗 Enlace copiado. Compártelo para abrir tu programa.'); })
+                .catch(function () { setStatus('🔗 Enlace listo en la barra del navegador.'); });
+            } else setStatus('🔗 Enlace listo en la barra del navegador.');
+          }
+        }, '🔗 Compartir')
+      ]),
+      nameInput,
+      area,
+      status,
+      h('div', { class: 'studio__saved' }, [h('h3', {}, 'Mis programas guardados'), projectList]),
+      h('div', { class: 'modal__actions' }, [
+        h('button', { class: 'btn btn--ghost', type: 'button', onclick: closeOverlay }, 'Cerrar')
+      ])
+    ]);
+    overlay(panel);
+    refreshList();
+    if (initialCode) setStatus('Programa compartido abierto. Puedes cambiarlo y guardarlo como tuyo.');
+    syncHash('#/studio');
+  }
+
+  function openQuest() {
+    Sound.tap();
+    if (window.CodeKids && window.CodeKids.QuestApp) window.CodeKids.QuestApp.open();
+    else window.location.hash = '#/aventura';
+  }
+
   function renderHome() {
     var host = $('#view-home .wrap');
     clear(host);
@@ -320,7 +613,7 @@
       h('div', { class: 'home__titles' }, [
         h('p', { class: 'eyebrow' }, 'CodeKids'),
         h('h1', {}, name ? ('Hola, ' + name + ' 👋') : '¡Hola! 👋'),
-        h('p', { class: 'home__sub' }, 'Cinco lecciones y zona de entrenamiento. En cada una lees una idea, ves un ejemplo y resuelves retos. Al final sabrás explicar cómo empieza un programa.')
+        h('p', { class: 'home__sub' }, LESSONS.length + ' lecciones y zona de entrenamiento. En cada una lees una idea, ves un ejemplo y resuelves retos. Al final sabrás explicar cómo empieza un programa.')
       ])
     ]);
 
@@ -366,10 +659,11 @@
       var isNext = l.id === cl.id && !allDone;
       var isSeason = l.id === 'l_season';
       var isSpaceLesson = l.id === 'l8';
+      /* Sin aria-label: el texto visible ya nombra la lección y añadir un
+         aria-label más corto rompía "label-content-name-mismatch". */
       var card = h('button', {
         class: 'lesson-card' + (lessonDone(l) ? ' is-done' : '') + (isNext ? ' is-next' : '') + (isSeason ? ' is-season' : '') + (isSpaceLesson ? ' is-space' : ''),
-        type: 'button',
-        'aria-label': 'Lección ' + l.num + ': ' + l.title
+        type: 'button'
       }, [
         h('span', { class: 'lesson-card__num' + (isSeason ? ' is-season-badge' : (isSpaceLesson ? ' is-space-badge' : '')) }, lessonDone(l) ? '✓' : (isSpaceLesson ? '🚀' : String(l.num))),
         h('div', { class: 'lesson-card__body' }, [
@@ -392,10 +686,12 @@
         h('h2', { style: 'font-size:1.1rem;margin:0' }, '🧭 Recursos y Práctica'),
         h('p', { style: 'font-size:.8rem;margin:0;color:var(--muted)' }, 'Herramientas de aprendizaje')
       ]),
-      btn('📖 Teoría & Evaluación', 'btn--primary home__nav-btn', function () { renderTheory(); showView('theory'); }),
+      btn('🗺️ Modo Aventura (8 mundos)', 'btn--primary home__nav-btn', openQuest),
+      btn('📖 Teoría & Evaluación', 'btn--soft home__nav-btn', function () { renderTheory(); showView('theory'); }),
       btn('📚 Diccionario de Sentencias', 'btn--soft home__nav-btn', function () { renderDict(); showView('dict'); }),
       btn('🧩 Rompecabezas & Repaso', 'btn--soft home__nav-btn', function () { renderQuiz(); showView('quiz'); }),
       btn('🎨 Zona libre de código', 'btn--soft home__nav-btn', openFreePlay),
+      btn('🛠️ Mi Estudio Chispa', 'btn--soft home__nav-btn', function () { openStudio(); }),
       btn('📊 Mi progreso', 'btn--soft home__nav-btn', function () { renderProgress(); showView('progress'); }),
       btn('❓ Cómo se juega', 'btn--ghost home__nav-btn', openHowTo)
     ]);
@@ -410,7 +706,22 @@
       mainContent
     ]);
 
+    /* Sin aria-label: el texto visible ya describe la acción y un aria-label
+       distinto provoca label-content-name-mismatch en Lighthouse. */
+    var questBanner = h('button', {
+      class: 'quest-banner', type: 'button'
+    }, [
+      h('span', { class: 'quest-banner__emoji', 'aria-hidden': 'true' }, '🏰'),
+      h('span', { class: 'quest-banner__body' }, [
+        h('b', {}, 'NUEVO · Modo Aventura'),
+        h('span', {}, 'Elige un mundo, arma a tu héroe y enséñale qué hacer cuando vea un enemigo, fuego o una llave.')
+      ]),
+      h('span', { class: 'quest-banner__go', 'aria-hidden': 'true' }, '›')
+    ]);
+    questBanner.addEventListener('click', openQuest);
+
     host.appendChild(hero);
+    host.appendChild(questBanner);
     host.appendChild(homeLayout);
   }
 
@@ -422,6 +733,7 @@
     if (!l) l = LESSONS[0];
     S.lesson = l;
     S.lessonTab = tab || 0;
+    syncHash('#/leccion/' + l.id + '/' + (tab || 0));
     showView('lesson');
     renderLesson();
   }
@@ -803,6 +1115,7 @@
     return (list || []).map(function (b) {
       var o = { id: uid(), type: b.type };
       if (b.type === 'repeat') { o.times = b.times || 2; o.do = withIds(b.do); }
+      if (b.type === 'ifwall' && b.do && b.do.length) o.do = withIds(b.do);
       return o;
     });
   }
@@ -828,8 +1141,12 @@
     S.stepping = false;
     S.finished = false;
     S.stepMode = !!store.settings.step;
+    S.codeError = false;
     clearTimeout(S.timer);
+    clearTimeout(EX.timer);
+    EX.running = false;
 
+    syncHash('#/reto/' + m.id);
     showView('mission');
     renderMission();
   }
@@ -844,6 +1161,8 @@
     S.undo = [];
     S.attempts = 0;
     S.hintsRevealed = 0;
+    S.idx = 0;
+    S.prediction = null;
     S.predictionDone = true;
     S.result = null;
     S.frames = [];
@@ -851,8 +1170,12 @@
     S.stepping = false;
     S.finished = false;
     S.stepMode = !!store.settings.step;
+    S.codeError = false;
     clearTimeout(S.timer);
+    clearTimeout(EX.timer);
+    EX.running = false;
 
+    syncHash('#/libre');
     showView('mission');
     renderMission();
   }
@@ -1005,11 +1328,22 @@
       h('p', { class: 'hint-box', id: 'hint-box', hidden: 'hidden' })
     ]);
 
+    var primmRow = h('div', { class: 'primm-actions' }, [
+      h('button', { class: 'chip chip--mini', type: 'button' }, '1 · Investiga'),
+      h('button', { class: 'chip chip--mini', type: 'button' }, '2 · Modifica'),
+      h('button', { class: 'chip chip--mini', type: 'button' }, '3 · Crea')
+    ]);
+    primmRow.children[0].addEventListener('click', function () { primmAction('investiga'); });
+    primmRow.children[1].addEventListener('click', function () { primmAction('modifica'); });
+    primmRow.children[2].addEventListener('click', function () { primmAction('crea'); });
+
     var board = h('div', { class: 'board', id: 'board' });
     var feedback = h('div', { class: 'feedback', id: 'feedback', role: 'status', 'aria-live': 'polite' });
 
     var stage = h('section', { class: 'stage' }, [
+      attentionWidget(m, lesson, retoIdx),
       goal,
+      primmRow,
       h('div', { class: 'board-wrap' }, [board]),
       feedback
     ]);
@@ -1109,8 +1443,8 @@
         setFeedback('info', '🐢', S.stepMode
           ? 'Modo paso a paso: cada toque ejecuta una orden.'
           : 'Modo normal: todo el programa de una vez.');
+        resetRunButton();
       }
-      resetRunButton();
     });
 
     modeBtn.addEventListener('click', function () {
@@ -1134,22 +1468,33 @@
       txtArea.addEventListener('input', function () {
         var parsed = parsePython(txtArea.value);
         var errBox = $('#code-editor-status');
+        if (!errBox) return;
+        var limit = S.mission ? (S.mission.maxBlocks || 60) : 60;
+        var used = E.countBlocks(parsed.program);
+        if (used > limit) {
+          parsed.errors.push({ line: 1, text: 'Demasiados bloques (máximo ' + limit + ')' });
+        }
         if (parsed.errors.length) {
+          /* No ejecutamos el programa anterior sin avisar: bloqueamos Ejecutar. */
+          S.codeError = true;
           errBox.style.display = 'block';
-          errBox.textContent = '⚠️ Línea ' + parsed.errors[0].line + ': ' + parsed.errors[0].text + ' no reconocida. Ej: chispa.avanzar()';
+          errBox.textContent = '⚠️ Línea ' + parsed.errors[0].line + ': ' + parsed.errors[0].text + '. Corrígela para poder ejecutar.';
+          resetRunButton();
         } else {
+          S.codeError = false;
           errBox.style.display = 'none';
           pushUndo();
           S.program = parsed.program;
           renderProgram(true);
+          resetRunButton();
         }
       });
     }
 
     function insertCodeSnippet(snippet) {
       if (!txtArea) return;
-      var start = txtArea.selectionStart || txtArea.value.length;
-      var end = txtArea.selectionEnd || txtArea.value.length;
+      var start = txtArea.selectionStart == null ? txtArea.value.length : txtArea.selectionStart;
+      var end = txtArea.selectionEnd == null ? txtArea.value.length : txtArea.selectionEnd;
       var prev = txtArea.value;
       txtArea.value = prev.slice(0, start) + snippet + prev.slice(end);
       txtArea.focus();
@@ -1290,12 +1635,15 @@
   function renderItem(block, path) {
     var key = path.join('.');
 
-    if (block.type === 'repeat') {
+    if (block.type === 'repeat' || (block.type === 'ifwall' && block.do && block.do.length)) {
+      var isIf = block.type === 'ifwall';
       var focused = S.focus.join('.') === key;
-      var head = h('div', { class: 'repeat__head' }, [
-        h('span', { html: SVG.repeat }),
-        h('span', {}, 'Repetir'),
-        h('div', { class: 'stepper' }, [
+      var headParts = [
+        h('span', { html: isIf ? SVG.ifwall : SVG.repeat }),
+        h('span', {}, isIf ? 'Si hay pared' : 'Repetir')
+      ];
+      if (!isIf) {
+        headParts.push(h('div', { class: 'stepper' }, [
           stepBtn('−', block.times <= 1, function (e) {
             e.stopPropagation();
             pushUndo();
@@ -1309,9 +1657,11 @@
             block.times = Math.min(10, block.times + 1);
             renderProgram();
           })
-        ]),
-        delBtn(function (e) { e.stopPropagation(); removeAt(path); })
-      ]);
+        ]));
+      }
+      headParts.push(delBtn(function (e) { e.stopPropagation(); removeAt(path); }));
+
+      var head = h('div', { class: 'repeat__head' }, headParts);
 
       var body = h('div', { class: 'repeat__body' });
       if (block.do && block.do.length) {
@@ -1324,11 +1674,11 @@
         h('button', {
           class: 'btn btn--soft', type: 'button',
           onclick: function () { S.focus = path.slice(0, -1); Sound.tap(); renderProgram(); }
-        }, '✓ Listo, salir del bucle')
+        }, isIf ? '✓ Listo, salir del condicional' : '✓ Listo, salir del bucle')
       ]) : null;
 
       var rep = h('div', {
-        class: 'repeat' + (focused ? ' is-target' : ''),
+        class: 'repeat' + (isIf ? ' repeat--if' : '') + (focused ? ' is-target' : ''),
         dataset: { path: key }
       }, [head, body, foot]);
 
@@ -1393,6 +1743,11 @@
     if (!S.program.length) {
       Sound.error();
       setFeedback('info', '✋', 'Primero agrega bloques con los botones de arriba.');
+      return;
+    }
+    if (S.codeError) {
+      Sound.error();
+      setFeedback('info', '⚠️', 'Corrige la línea marcada en rojo antes de ejecutar.');
       return;
     }
     if (!S.predictionDone && !S.free) { openPrediction(); return; }
@@ -1660,7 +2015,12 @@
         var inner = toCode(b.do || [], indent + 1, '');
         out += inner || (pad + '    pass\n');
       } else if (b.type === 'ifwall') {
-        out += pad + 'if chispa.hay_pared():\n' + pad + '    chispa.girar_derecha()\n';
+        out += pad + 'if chispa.hay_pared():\n';
+        if (b.do && b.do.length) {
+          out += toCode(b.do, indent + 1, '');
+        } else {
+          out += pad + '    chispa.girar_derecha()\n';
+        }
       } else if (b.type === 'move') {
         out += pad + 'chispa.avanzar()\n';
       } else if (b.type === 'left') {
@@ -1698,8 +2058,15 @@
           list.push({ id: uid(), type: 'right' });
           i++;
         } else if (clean === 'if chispa.hay_pared():' || clean === 'if chispa.hay_pared()' || clean === 'si_hay_pared()' || clean === 'si hay pared:') {
-          list.push({ id: uid(), type: 'ifwall' });
-          i++;
+          /* El cuerpo indentado pertenece al if. Si es sólo girar a la derecha,
+             se mantiene como ifwall simple (el motor ya gira por él). */
+          var ifRes = parseBlock(i + 1, indent + 1);
+          if (ifRes.list.length === 1 && ifRes.list[0].type === 'right') {
+            list.push({ id: uid(), type: 'ifwall' });
+          } else {
+            list.push({ id: uid(), type: 'ifwall', do: ifRes.list });
+          }
+          i = ifRes.nextIdx;
         } else {
           var loopMatch = clean.match(/^for\s+.*\s+in\s+range\((\d+)\)\s*:?$/) ||
                           clean.match(/^repetir\s+(\d+)\s*(?:veces)?\s*:?$/);
@@ -2761,6 +3128,13 @@
     if (key === 'diccionario' || key === 'dict') { renderDict(); showView('dict'); return true; }
     if (key === 'repaso' || key === 'quiz') { renderQuiz(); showView('quiz'); return true; }
     if (key === 'libre') { openFreePlay(); return true; }
+    if (key === 'aventura' || key === 'adventure') {
+      /* quest-app.js se carga después de app.js: si todavía no está listo,
+         él mismo abre el mundo cuando termina de cargar. */
+      if (window.CodeKids && window.CodeKids.QuestApp) window.CodeKids.QuestApp.open(parts[1] || '');
+      return true;
+    }
+    if (key === 'studio') { openStudio(parts[1] ? decodeCode(parts[1]) : ''); return true; }
     return false;
   }
 

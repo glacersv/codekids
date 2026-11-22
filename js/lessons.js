@@ -11,6 +11,9 @@
 (function (root) {
   'use strict';
 
+  /* Importación directa segura desde Node (index.html ya respeta el orden). */
+  root.CodeKids = root.CodeKids || {};
+
   var LESSONS = [
 
     /* ==================== 1 ==================== */

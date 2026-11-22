@@ -1,6 +1,6 @@
 /* =====================================================================
    CodeKids · missions.js
-   10 retos agrupados por lección. El orden de este arreglo es el orden en
+   30 retos agrupados por lección. El orden de este arreglo es el orden en
    que se juegan.
 
    Cuadrícula (una cadena por renglón):
@@ -23,7 +23,15 @@
 (function (root) {
   'use strict';
 
+  /* Permite importar este archivo directamente desde Node sin depender del
+     orden de <script> en index.html. */
+  root.CodeKids = root.CodeKids || {};
   var E = root.CodeKids.Engine;
+  if (!E && typeof require === 'function') {
+    require('./engine.js');
+    E = root.CodeKids.Engine;
+  }
+  if (!E) throw new Error('CodeKids: carga engine.js antes que missions.js');
 
   function mk(m) {
     m.par = E.countBlocks(m.solution || []);
@@ -202,7 +210,7 @@
       lesson: 'l2',
       title: 'El gran circuito',
       concept: 'Bucle',
-      goal: 'Recorre la pista, recoge las 5 estrellas y llega a la meta.',
+      goal: 'Recorre la pista, recoge las 6 estrellas y llega a la meta.',
       learn: 'Un bucle largo ahorra decenas de bloques. En vez de 12 órdenes, sólo escribes 4 dentro de Repetir.',
       tip: 'Chispa debe avanzar tres veces y girar a la derecha. ¿Cuántas veces hace eso?',
       grid: ['......', '.R**..', '....*.', '....*.', '.F**..', '......'],
@@ -375,7 +383,7 @@
       lesson: 'l5',
       title: 'La isla de las estrellas',
       concept: 'Maestría',
-      goal: 'Recorre el camino alrededor de la isla, recoge las 4 estrellas y llega a la bandera.',
+      goal: 'Recorre el camino alrededor de la isla, recoge las 5 estrellas y llega a la bandera.',
       learn: 'Uniendo un bucle con una regla condicional puedes recorrer cualquier circuito cerrado con pocas líneas de código.',
       tip: 'Usa Repetir con Avanzar y Si hay pared para girar en cada esquina.',
       grid: [
@@ -440,7 +448,7 @@
       lesson: 'l_season',
       title: 'El Paseo Nevado',
       concept: 'Temporada',
-      goal: 'Recorre la plaza del pueblo nevado, recoge las 6 estrellas brillantes y llega a la meta.',
+      goal: 'Recorre la plaza del pueblo nevado, recoge las 8 estrellas brillantes y llega a la meta.',
       learn: '¡Un recorrido festivo impecable! Los bucles coordinados te permiten hacer coreografías completas.',
       tip: 'Chispa debe avanzar 4 pasos por cada lado y girar a la derecha.',
       grid: [

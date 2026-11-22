@@ -1,7 +1,14 @@
 # Chrome temporary profiles and caches
 .chrome/
 .chrome-profile/
+.chrome-check/
 .probe
+
+# Dependencias y entornos
+node_modules/
+.env
+.venv/
+__pycache__/
 
 # System / OS
 Thumbs.db

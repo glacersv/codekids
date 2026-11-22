@@ -1,7 +1,7 @@
 /* =====================================================================
    CodeKids · engine.js
    Lógica pura del juego: nada de DOM aquí.
-   Se puede probar con Node (tools/test-missions.mjs).
+   Se puede probar con Node (tools/test-missions.js).
 
    Un "programa" es una lista de bloques:
      { id, type:'move' }
@@ -95,7 +95,7 @@
     var n = 0;
     for (var i = 0; i < list.length; i++) {
       n += 1;
-      if (list[i].type === 'repeat') n += countBlocks(list[i].do || []);
+      if (list[i].type === 'repeat' || list[i].type === 'ifwall') n += countBlocks(list[i].do || []);
     }
     return n;
   }
@@ -105,29 +105,40 @@
      el bloque exacto que se está ejecutando en la interfaz). */
   function expand(program, maxSteps) {
     maxSteps = maxSteps || 400;
+    var MAX_VISITS = 20000;   // evita congelar la pestaña con bucles vacíos anidados
+    var MAX_DEPTH = 12;       // profundidad máxima de anidación
     var steps = [];
+    var visits = 0;
     var tooLong = false;
 
-    function walk(list, path) {
+    function walk(list, path, depth, conds) {
       if (tooLong) return;
+      if (depth > MAX_DEPTH) { tooLong = true; return; }
       for (var i = 0; i < list.length; i++) {
+        if (++visits > MAX_VISITS) { tooLong = true; return; }
         var b = list[i];
         var p = path.concat(i);
         if (b.type === 'repeat') {
           var times = Math.max(0, Math.min(20, Number(b.times) || 0));
           for (var k = 0; k < times; k++) {
-            walk(b.do || [], p);
+            walk(b.do || [], p, depth + 1, conds);
             if (tooLong) return;
           }
+        } else if (b.type === 'ifwall' && b.do && b.do.length) {
+          var guard = 'if:' + p.join('.');
+          steps.push({ type: 'ifwall', path: p, guard: guard, conds: conds.slice(), hasBody: true });
+          walk(b.do, p, depth + 1, conds.concat(guard));
+          if (tooLong) return;
+          steps.push({ type: 'endif', path: p, guard: guard, conds: conds.slice() });
         } else {
           if (steps.length >= maxSteps) { tooLong = true; return; }
-          steps.push({ type: b.type, path: p });
+          steps.push({ type: b.type, path: p, conds: conds.slice() });
         }
       }
     }
 
-    walk(program, []);
-    return { ok: !tooLong, steps: steps };
+    walk(program, [], 0, []);
+    return { ok: !tooLong, steps: steps, visits: visits };
   }
 
   /* ------------------------------------------------------------------
@@ -198,6 +209,14 @@
     var frames = [first];
     var result = 'incomplete';
     var hit = null;
+    var active = {};   // condicionales activos por ruta
+
+    function blocked(conds) {
+      for (var c = 0; c < conds.length; c++) {
+        if (active[conds[c]] === false) return true;
+      }
+      return false;
+    }
 
     stats.steps = ex.steps.length;
 
@@ -205,8 +224,15 @@
     for (var i = 0; i < ex.steps.length; i++) {
       var step = ex.steps[i];
       var path = step.path;
+      var conds = step.conds || [];
 
+      if (step.type === 'endif') { active[step.guard] = null; continue; }
       if (path.length > 1) stats.loop = true;
+      var skip = blocked(conds);
+      if (skip && step.type !== 'ifwall') {
+        frames.push(frame(st, 'think', path, i, { conditional: 'skip' }));
+        continue;
+      }
 
       switch (step.type) {
         case 'move': {
@@ -249,7 +275,11 @@
           var dd = DIRS[st.dir];
           var px = st.x + dd.x;
           var py = st.y + dd.y;
-          if (isWall(level, px, py)) {
+          var wall = isWall(level, px, py);
+          if (step.hasBody) {
+            active[step.guard] = wall;
+            frames.push(frame(st, 'think', path, i, { conditional: wall ? 'wall' : 'clear' }));
+          } else if (wall) {
             st.dir = (st.dir + 1) % 4;
             frames.push(frame(st, 'turn', path, i, { conditional: 'wall' }));
           } else {
