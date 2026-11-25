@@ -367,6 +367,18 @@ try {
     await js('document.querySelectorAll("#exam-root .pblock, #exam-root .chip--hint, #exam-root .primm-actions").length') === 0);
   ok('el único editor es de texto', await js('document.querySelectorAll("#exam-root textarea").length') === 1);
   ok('hay 4 ejercicios', EXAM_EXERCISES.length === 4);
+  ok('la ruta objetivo aparece antes de escribir código',
+    await js('document.querySelectorAll("#exam-board .exam-route").length') === 7);
+  ok('los pasos de la ruta están numerados',
+    await js('document.querySelector("#exam-board .exam-route__num").textContent') === '1');
+  ok('la ruta también se lista con flechas', (await js(
+    'document.querySelector(".exam-route-line").textContent') || '').includes('→'));
+  ok('las flechas objetivo son visibles', await js(`(function(){
+    var a = document.querySelector('#exam-board .exam-route__arrow svg');
+    if (!a) return false;
+    var r = a.getBoundingClientRect();
+    return r.width > 4 && r.height > 4 && getComputedStyle(a.parentElement).opacity !== '0';
+  })()`));
 
   await js(`(function(){
     var t = document.querySelector('#exam-code');
@@ -380,6 +392,8 @@ try {
   })()`), 15000);
   ok('el código escrito lleva a Chispa a la meta', examWon);
   ok('la ruta queda dibujada con flechas', await js('document.querySelectorAll("#exam-board .trail").length') > 0);
+  ok('la ruta objetivo sigue visible al terminar',
+    await js('document.querySelectorAll("#exam-board .exam-route").length') === 7);
   ok('las flechas de la ruta son visibles', await js(`(function(){
     var t = document.querySelector('#exam-board .trail svg');
     if (!t) return false;

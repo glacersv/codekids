@@ -241,11 +241,13 @@ por 10 filas:
 | 4 · Vuelta a la plaza | Ruta larga con cinco estrellas |
 
 En cada ejercicio hay un solo `textarea`: no hay paleta de bloques, botones de
-atajo, pistas, modo paso a paso ni predicción. Al ejecutar, Chispa recorre el
-tablero y deja una flecha en cada casilla visitada; al llegar a la bandera con
-todas las estrellas, la meta se ilumina y el panel dice cuántas casillas se
-recorrieron. Si choca o se queda corta, el panel lo explica sin dar la
-solución. El botón «Siguiente ejercicio» guarda el código y el resultado; al
+atajo, modo paso a paso ni predicción. **La ruta que debe seguir Chispa está
+dibujada en el tablero** con flechas azules numeradas, y también se lista debajo
+del tablero como `↑ → ↓ ←` para que el alumno la traduzca a órdenes escritas.
+Al ejecutar, las flechas verdes muestran la ruta que escribió; al llegar a la
+bandera con todas las estrellas, la meta se ilumina y el panel dice cuántas
+casillas se recorrieron. Si choca o se queda corta, el panel lo explica sin dar
+el código. El botón «Siguiente ejercicio» guarda el código y el resultado; al
 final se muestra el puntaje sobre 4.
 
 Los ejercicios y sus respuestas de referencia viven en `js/exam.js`. El código

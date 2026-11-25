@@ -2987,6 +2987,8 @@
      La ruta queda dibujada con flechas hasta la bandera.
      ================================================================== */
   var EXAM_KEY = 'codekids.exam.v1';
+  var EXAM_ROUTE_ARROW = '<svg viewBox="0 0 24 24"><path d="M12 20V5M6 11l6-6 6 6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var EXAM_GLYPHS = ['↑', '→', '↓', '←'];
   var examState = null;
 
   function loadExamAnswers() {
@@ -3040,6 +3042,39 @@
     if (f && bag.cells[f.y] && bag.cells[f.y][f.x]) bag.cells[f.y][f.x].classList.add('tile--goal');
   }
 
+  /* Ruta de referencia: se calcula con la solución privada y se dibuja en el
+     tablero antes de que el alumno escriba una sola línea de código. */
+  function examSteps(level, solution) {
+    var steps = [];
+    var res = E.run(level, solution, { maxSteps: 400 });
+    var prev = null;
+    res.frames.forEach(function (f) {
+      if (f.effect === 'move' && prev) {
+        steps.push({ x: prev.x, y: prev.y, dir: f.dir, step: steps.length + 1 });
+      }
+      prev = f;
+    });
+    return steps;
+  }
+
+  function drawExamRoute(bag, steps) {
+    if (!bag) return;
+    (steps || []).forEach(function (s) {
+      var tile = bag.cells[s.y] && bag.cells[s.y][s.x];
+      if (!tile) return;
+      var el = h('div', { class: 'exam-route' }, [
+        h('div', { class: 'exam-route__arrow', html: EXAM_ROUTE_ARROW }),
+        h('span', { class: 'exam-route__num' }, String(s.step))
+      ]);
+      el.querySelector('.exam-route__arrow').style.transform = 'rotate(' + (s.dir * 90) + 'deg)';
+      tile.appendChild(el);
+    });
+  }
+
+  function examRouteText(steps) {
+    return steps.map(function (s) { return EXAM_GLYPHS[s.dir] || '↑'; }).join(' ');
+  }
+
   function examStatus(node, kind, icon, text) {
     if (!node) return;
     node.className = 'exam-status' + (kind === 'ok' ? ' is-ok' : kind === 'error' ? ' is-error' : '');
@@ -3061,7 +3096,7 @@
         renderHome();
       }),
       h('div', { class: 'topbar__mid' }, [
-        h('p', { class: 'eyebrow' }, 'Evaluación · solo código · sin pistas'),
+        h('p', { class: 'eyebrow' }, 'Evaluación · solo código · ruta marcada'),
         h('h1', { class: 'topbar__title' }, 'La ruta de Chispa')
       ]),
       h('div', { class: 'topbar__tools' }, [
@@ -3081,12 +3116,13 @@
     var e = EXAM.exercises[examState.i];
     var level = E.parseLevel({ grid: e.grid, startDir: e.startDir, solution: e.solution });
     S.mission = null;  // el tablero de examen nunca usa el aspecto espacial
+    examState.route = examSteps(level, e.solution);
     var saved = examState.answers[examState.i];
 
     var boardEl = h('div', { class: 'board exam-board', id: 'exam-board' });
     var statusEl = h('div', {
       class: 'exam-status', id: 'exam-status', role: 'status', 'aria-live': 'polite'
-    }, 'Escribe tu código y ejecútalo para ver la ruta de Chispa.');
+    }, 'Sigue las flechas azules: escribe el código y ejecútalo para que Chispa recorra esa misma ruta.');
 
     var area = h('textarea', {
       id: 'exam-code',
@@ -3109,17 +3145,22 @@
         h('h2', { class: 'exam-title' }, e.title),
         h('p', { class: 'exam-goal' }, e.goal),
         boardEl,
+        h('div', { class: 'exam-route-line' }, [
+          h('b', {}, 'Ruta marcada (' + examState.route.length + ' pasos): '),
+          h('span', {}, examRouteText(examState.route))
+        ]),
         h('div', { class: 'exam-legend' }, [
           h('span', {}, '🟡 Inicio'),
           h('span', {}, '🏁 Meta'),
-          h('span', {}, '➡️ Ruta recorrida'),
+          h('span', {}, '🔵 Ruta que debe seguir'),
+          h('span', {}, '🟢 Tu ruta al ejecutar'),
           h('span', {}, '⭐ Estrellas')
         ]),
         statusEl
       ]),
       h('aside', { class: 'exam-editor' }, [
         h('h2', { class: 'exam-title' }, '⌨️ Tu código'),
-        h('p', { class: 'exam-note' }, 'Sin bloques. Sin pistas. Escribe cada orden.'),
+        h('p', { class: 'exam-note' }, 'Sin bloques. Las flechas azules muestran la ruta; escribe cada orden.'),
         area,
         errEl,
         h('div', { class: 'exam-actions' }, [runBtn, nextBtn])
@@ -3128,6 +3169,7 @@
 
     examState.board = mountBoard(level, boardEl);
     markExamTiles(examState.board);
+    drawExamRoute(examState.board, examState.route);
 
     runBtn.addEventListener('click', function () { runExam(level, area, errEl, statusEl, runBtn); });
     nextBtn.addEventListener('click', examNext);
@@ -3165,6 +3207,7 @@
 
     examState.board = mountBoard(level, $('#exam-board'));
     markExamTiles(examState.board);
+    drawExamRoute(examState.board, examState.route || []);
     applyFrame(examState.board, result.frames[0], null, { highlight: false });
     examStatus(statusEl, 'info', '▶️', 'Chispa está recorriendo el tablero…');
     examTick(statusEl, runBtn);

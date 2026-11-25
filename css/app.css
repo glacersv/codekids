@@ -2199,8 +2199,50 @@ body.calm .repeat.is-target { box-shadow: 0 0 0 2px var(--sun-d); }
   background: #DFF7EC;
   box-shadow: inset 0 0 0 4px var(--mint-d);
 }
-.exam-board .trail { inset: 18%; opacity: .75; color: var(--mint-d); }
+/* Ruta objetivo (azul, con número de paso) y ruta escrita por el alumno (verde) */
+.exam-route {
+  position: absolute;
+  inset: 8%;
+  z-index: 1;
+  pointer-events: none;
+}
+.exam-route__arrow {
+  position: absolute;
+  inset: 0;
+  color: var(--sky-d);
+  opacity: .62;
+}
+.exam-route__arrow svg { width: 100%; height: 100%; }
+.exam-route__num {
+  position: absolute;
+  right: -2px;
+  bottom: -3px;
+  min-width: 13px;
+  padding: 0 2px;
+  background: var(--card);
+  border: 1px solid var(--sky);
+  border-radius: 6px;
+  color: var(--sky-d);
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 12px;
+  text-align: center;
+}
+.exam-board .trail { inset: 26%; z-index: 2; opacity: .9; color: var(--mint-d); }
 .exam-board .trail svg { width: 100%; height: 100%; }
+.exam-board .trail svg path { stroke: var(--mint-d); stroke-width: 3.4; }
+.exam-route-line {
+  margin: 12px 0 4px;
+  padding: 10px;
+  background: #EAF4FD;
+  border: 1.5px solid var(--sky);
+  border-radius: var(--r-md);
+  color: var(--ink);
+  font-size: .8rem;
+  line-height: 1.8;
+  word-spacing: 4px;
+}
+.exam-route-line b { color: var(--sky-d); }
 .exam-legend {
   display: flex;
   flex-wrap: wrap;
