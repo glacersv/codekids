@@ -19,6 +19,7 @@ const require = createRequire(import.meta.url);
 require('../js/engine.js'); // missions.js espera CodeKids.Engine en globalThis
 const { LESSONS } = require('../js/lessons.js');
 const { MISSIONS } = require('../js/missions.js');
+const { exercises: EXAM_EXERCISES } = require('../js/exam.js');
 
 let pass = 0, fail = 0;
 const errors = [];
@@ -358,7 +359,44 @@ try {
   ok('el progreso de aventura se guarda', await js('JSON.parse(localStorage.getItem("codekids.quest.v1") || "{}").cleared.indexOf("q1") >= 0'));
   await shot('check-aventura');
 
-  /* ---------- 8. Revisión de consola ---------- */
+  /* ---------- 8. Evaluación: tablero 10x10, código puro y ruta visible ---------- */
+  await goto('#/evaluacion/1', '#exam-board .robot');
+  ok('la evaluación muestra un tablero de 100 casillas',
+    await js('document.querySelectorAll("#exam-board .tile").length') === 100);
+  ok('no hay bloques ni botones de pista en el examen',
+    await js('document.querySelectorAll("#exam-root .pblock, #exam-root .chip--hint, #exam-root .primm-actions").length') === 0);
+  ok('el único editor es de texto', await js('document.querySelectorAll("#exam-root textarea").length') === 1);
+  ok('hay 4 ejercicios', EXAM_EXERCISES.length === 4);
+
+  await js(`(function(){
+    var t = document.querySelector('#exam-code');
+    t.value = ${JSON.stringify(EXAM_EXERCISES[0].code)};
+    document.querySelector('#exam-run').click();
+    return true;
+  })()`);
+  const examWon = await waitFor(() => js(`(function(){
+    var el = document.querySelector('#exam-status');
+    return el && el.textContent.indexOf('Ruta completada') >= 0;
+  })()`), 15000);
+  ok('el código escrito lleva a Chispa a la meta', examWon);
+  ok('la ruta queda dibujada con flechas', await js('document.querySelectorAll("#exam-board .trail").length') > 0);
+  ok('las flechas de la ruta son visibles', await js(`(function(){
+    var t = document.querySelector('#exam-board .trail svg');
+    if (!t) return false;
+    var r = t.getBoundingClientRect();
+    return r.width > 4 && r.height > 4 && getComputedStyle(t.parentElement).opacity !== '0';
+  })()`));
+  ok('la meta se marca como alcanzada', await js('!!document.querySelector("#exam-board .tile--goal.is-reached")'));
+  ok('el resultado se guarda', await js(
+    'JSON.parse(localStorage.getItem("codekids.exam.v1") || "{}").answers[0].passed === true'));
+  await shot('check-evaluacion');
+
+  await js('document.querySelector("#exam-next").click(); true');
+  ok('avanza al ejercicio 2', await js('!!document.querySelector("#exam-code") && location.hash === "#/evaluacion/2"'));
+  await goto('#/evaluacion/final', '.exam-summary');
+  ok('el resumen final muestra la nota', (await js('document.querySelector(".exam-score").textContent') || '').includes('1 / 4'));
+
+  /* ---------- 9. Revisión de consola ---------- */
   await goto('#/progreso', '.progress-card');
   ok('el progreso suma estrellas', (await js('document.querySelectorAll(".stat b")[0].textContent')) !== '0');
 

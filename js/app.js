@@ -11,6 +11,7 @@
   var E = window.CodeKids.Engine;
   var MISSIONS = window.CodeKids.MISSIONS;
   var LESSONS = window.CodeKids.LESSONS;
+  var EXAM = window.CodeKids.EXAM;
 
   var STORE_KEY = 'codekids.v3';
   var STUDIO_KEY = 'codekids.studio.v1';
@@ -283,7 +284,7 @@
   function showView(name) {
     if (S.attentionTimer) { clearInterval(S.attentionTimer); S.attentionTimer = null; }
     S.view = name;
-    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory', 'dict', 'quest'].forEach(function (v) {
+    ['home', 'lesson', 'mission', 'progress', 'quiz', 'theory', 'exam', 'dict', 'quest'].forEach(function (v) {
       var node = document.getElementById('view-' + v);
       if (node) node.hidden = (v !== name);
     });
@@ -688,6 +689,7 @@
       ]),
       btn('🗺️ Modo Aventura (8 mundos)', 'btn--primary home__nav-btn', openQuest),
       btn('📖 Teoría & Evaluación', 'btn--soft home__nav-btn', function () { renderTheory(); showView('theory'); }),
+      btn('📝 Evaluación · La ruta de Chispa', 'btn--soft home__nav-btn', function () { openExam(0); }),
       btn('📚 Diccionario de Sentencias', 'btn--soft home__nav-btn', function () { renderDict(); showView('dict'); }),
       btn('🧩 Rompecabezas & Repaso', 'btn--soft home__nav-btn', function () { renderQuiz(); showView('quiz'); }),
       btn('🎨 Zona libre de código', 'btn--soft home__nav-btn', openFreePlay),
@@ -2980,6 +2982,288 @@
   }
 
   /* ==================================================================
+     EVALUACIÓN · LA RUTA DE CHISPA
+     Tableros de 10x10, editor de código puro (sin bloques ni pistas).
+     La ruta queda dibujada con flechas hasta la bandera.
+     ================================================================== */
+  var EXAM_KEY = 'codekids.exam.v1';
+  var examState = null;
+
+  function loadExamAnswers() {
+    try {
+      var raw = window.localStorage.getItem(EXAM_KEY);
+      var data = raw ? JSON.parse(raw) : null;
+      if (data && Array.isArray(data.answers)) return data.answers;
+    } catch (e) { /* file:// o almacenamiento bloqueado */ }
+    return [];
+  }
+
+  function saveExamAnswers() {
+    try {
+      window.localStorage.setItem(EXAM_KEY, JSON.stringify({ answers: examState.answers }));
+    } catch (e) { /* no se puede guardar: la evaluación sigue funcionando */ }
+  }
+
+  function examReset() {
+    examState = {
+      i: 0,
+      answers: loadExamAnswers(),
+      frames: [],
+      idx: 0,
+      result: null,
+      playing: false,
+      board: null,
+      timer: null
+    };
+  }
+
+  function restartExam() {
+    try { window.localStorage.removeItem(EXAM_KEY); } catch (e) {}
+    examReset();
+    openExam(0);
+  }
+
+  function openExam(index) {
+    if (!EXAM || !EXAM.exercises.length) return;
+    if (!examState) examReset();
+    clearTimeout(examState.timer);
+    examState.playing = false;
+    examState.i = Math.max(0, Math.min(EXAM.exercises.length, Number(index) || 0));
+    renderExam();
+  }
+
+  function markExamTiles(bag) {
+    if (!bag) return;
+    var s = bag.level.start;
+    var f = bag.level.flag;
+    if (bag.cells[s.y] && bag.cells[s.y][s.x]) bag.cells[s.y][s.x].classList.add('tile--start');
+    if (f && bag.cells[f.y] && bag.cells[f.y][f.x]) bag.cells[f.y][f.x].classList.add('tile--goal');
+  }
+
+  function examStatus(node, kind, icon, text) {
+    if (!node) return;
+    node.className = 'exam-status' + (kind === 'ok' ? ' is-ok' : kind === 'error' ? ' is-error' : '');
+    node.textContent = icon + ' ' + text;
+  }
+
+  function renderExam() {
+    var host = $('#exam-root');
+    if (!host) return;
+    showView('exam');
+    clear(host);
+
+    var total = EXAM.exercises.length;
+    var top = h('div', { class: 'topbar' }, [
+      backBtn(function () {
+        clearTimeout(examState.timer);
+        examState.playing = false;
+        showView('home');
+        renderHome();
+      }),
+      h('div', { class: 'topbar__mid' }, [
+        h('p', { class: 'eyebrow' }, 'Evaluación · solo código · sin pistas'),
+        h('h1', { class: 'topbar__title' }, 'La ruta de Chispa')
+      ]),
+      h('div', { class: 'topbar__tools' }, [
+        h('span', { class: 'chip' }, 'Tablero 10 × 10'),
+        examState.i < total ? h('span', { class: 'chip' }, 'Ejercicio ' + (examState.i + 1) + ' de ' + total) : null,
+        iconBtn('🔄', 'Reiniciar evaluación', restartExam)
+      ])
+    ]);
+    host.appendChild(top);
+
+    if (examState.i >= total) {
+      renderExamSummary(host);
+      syncHash('#/evaluacion/final');
+      return;
+    }
+
+    var e = EXAM.exercises[examState.i];
+    var level = E.parseLevel({ grid: e.grid, startDir: e.startDir, solution: e.solution });
+    S.mission = null;  // el tablero de examen nunca usa el aspecto espacial
+    var saved = examState.answers[examState.i];
+
+    var boardEl = h('div', { class: 'board exam-board', id: 'exam-board' });
+    var statusEl = h('div', {
+      class: 'exam-status', id: 'exam-status', role: 'status', 'aria-live': 'polite'
+    }, 'Escribe tu código y ejecútalo para ver la ruta de Chispa.');
+
+    var area = h('textarea', {
+      id: 'exam-code',
+      class: 'exam-code',
+      spellcheck: 'false',
+      autocapitalize: 'off',
+      autocomplete: 'off',
+      placeholder: '# Escribe aquí tus órdenes con Python'
+    });
+    area.value = saved && typeof saved.code === 'string' ? saved.code : '';
+
+    var errEl = h('div', { class: 'exam-error', id: 'exam-error', hidden: 'hidden' });
+    var runBtn = h('button', { class: 'btn btn--primary', id: 'exam-run', type: 'button' }, '▶ Ejecutar ruta');
+    var nextBtn = h('button', { class: 'btn btn--soft', id: 'exam-next', type: 'button' },
+      examState.i + 1 < total ? 'Siguiente ejercicio →' : 'Ver resultado final 🏆');
+
+    host.appendChild(h('div', { class: 'exam-grid' }, [
+      h('section', { class: 'exam-panel' }, [
+        h('p', { class: 'kicker' }, e.concept),
+        h('h2', { class: 'exam-title' }, e.title),
+        h('p', { class: 'exam-goal' }, e.goal),
+        boardEl,
+        h('div', { class: 'exam-legend' }, [
+          h('span', {}, '🟡 Inicio'),
+          h('span', {}, '🏁 Meta'),
+          h('span', {}, '➡️ Ruta recorrida'),
+          h('span', {}, '⭐ Estrellas')
+        ]),
+        statusEl
+      ]),
+      h('aside', { class: 'exam-editor' }, [
+        h('h2', { class: 'exam-title' }, '⌨️ Tu código'),
+        h('p', { class: 'exam-note' }, 'Sin bloques. Sin pistas. Escribe cada orden.'),
+        area,
+        errEl,
+        h('div', { class: 'exam-actions' }, [runBtn, nextBtn])
+      ])
+    ]));
+
+    examState.board = mountBoard(level, boardEl);
+    markExamTiles(examState.board);
+
+    runBtn.addEventListener('click', function () { runExam(level, area, errEl, statusEl, runBtn); });
+    nextBtn.addEventListener('click', examNext);
+    syncHash('#/evaluacion/' + (examState.i + 1));
+  }
+
+  function runExam(level, area, errEl, statusEl, runBtn) {
+    if (examState.playing) return;
+    clearTimeout(examState.timer);
+    var parsed = parsePython(area.value || '');
+
+    if (parsed.errors.length || !parsed.program.length) {
+      errEl.hidden = false;
+      errEl.textContent = parsed.errors.length
+        ? '⚠️ Línea ' + parsed.errors[0].line + ': sintaxis no válida. Corrígela para ejecutar.'
+        : '✋ Escribe al menos una orden antes de ejecutar.';
+      examStatus(statusEl, 'error', '⌨️', 'El código todavía no se puede ejecutar.');
+      Sound.error();
+      return;
+    }
+    errEl.hidden = true;
+
+    var result = E.run(level, parsed.program, { maxSteps: 400 });
+    if (result.result === 'error') {
+      examStatus(statusEl, 'error', '⚠️', 'El programa es demasiado largo. Prueba con un bucle.');
+      Sound.error();
+      return;
+    }
+
+    examState.frames = result.frames;
+    examState.idx = 0;
+    examState.result = result;
+    examState.playing = true;
+    runBtn.disabled = true;
+
+    examState.board = mountBoard(level, $('#exam-board'));
+    markExamTiles(examState.board);
+    applyFrame(examState.board, result.frames[0], null, { highlight: false });
+    examStatus(statusEl, 'info', '▶️', 'Chispa está recorriendo el tablero…');
+    examTick(statusEl, runBtn);
+  }
+
+  function examTick(statusEl, runBtn) {
+    var frames = examState.frames;
+    if (examState.idx >= frames.length - 1) { finishExamRun(statusEl, runBtn); return; }
+    var effect = frames[examState.idx].effect;
+    var delay = effect === 'turn' ? 180 : effect === 'think' ? 200 : effect === 'bump' ? 460 : 230;
+    if (document.body.classList.contains('calm')) delay = Math.max(120, delay - 60);
+    examState.timer = setTimeout(function () {
+      if (!examState.playing) return;
+      examState.idx += 1;
+      applyFrame(examState.board, frames[examState.idx], frames[examState.idx - 1], { highlight: false });
+      if (examState.idx >= frames.length - 1) finishExamRun(statusEl, runBtn);
+      else examTick(statusEl, runBtn);
+    }, delay);
+  }
+
+  function finishExamRun(statusEl, runBtn) {
+    if (!examState.playing) return;
+    examState.playing = false;
+    examState.timer = null;
+    runBtn.disabled = false;
+
+    var r = examState.result;
+    var moves = r.frames.filter(function (f) { return f.effect === 'move'; }).length;
+    var stars = examState.board ? examState.board.level.stars.length : 0;
+    var area = $('#exam-code');
+    var passed = r.result === 'win';
+    examState.answers[examState.i] = { code: area ? area.value : '', passed: passed, steps: moves };
+    saveExamAnswers();
+
+    if (passed) {
+      var flag = examState.board.level.flag;
+      var tile = examState.board.cells[flag.y] && examState.board.cells[flag.y][flag.x];
+      if (tile) tile.classList.add('is-reached');
+      examStatus(statusEl, 'ok', '✅', '¡Ruta completada! Chispa recorrió ' + moves + ' casillas, recogió ' + stars + ' estrellas y llegó a la meta.');
+      Sound.win();
+      return;
+    }
+
+    var msg;
+    if (r.result === 'bump') msg = 'Chispa chocó con una pared y su ruta se detuvo antes de la meta.';
+    else if (r.remaining > 0 && r.onFlag) msg = 'Chispa llegó a la bandera, pero faltaban ' + r.remaining + ' estrellas en la ruta.';
+    else msg = 'Chispa se detuvo antes de la meta. Prueba otra ruta.';
+    examStatus(statusEl, 'error', '🔎', msg + ' Casillas recorridas: ' + moves + '.');
+    Sound.bump();
+  }
+
+  function examNext() {
+    clearTimeout(examState.timer);
+    examState.playing = false;
+    var area = $('#exam-code');
+    if (area) {
+      var prev = examState.answers[examState.i] || {};
+      var unchanged = prev.code === area.value;
+      examState.answers[examState.i] = {
+        code: area.value,
+        passed: !!(unchanged && prev.passed),
+        steps: unchanged ? (prev.steps || 0) : 0
+      };
+      saveExamAnswers();
+    }
+    examState.i += 1;
+    renderExam();
+  }
+
+  function renderExamSummary(host) {
+    var total = EXAM.exercises.length;
+    var score = examState.answers.filter(function (a) { return !!(a && a.passed); }).length;
+    var card = h('div', { class: 'exam-summary' }, [
+      h('p', { class: 'kicker' }, 'Evaluación finalizada'),
+      h('h2', {}, score === total ? '🏆 ¡Ruta completa!' : '📝 Resultado de la evaluación'),
+      h('div', { class: 'exam-score' }, score + ' / ' + total + ' ejercicios con ruta completada'),
+      h('p', { class: 'exam-goal' }, score === total
+        ? 'Chispa llegó a la meta en los cuatro tableros.'
+        : 'Puedes repetir la evaluación para intentar los ejercicios que faltaron.')
+    ]);
+
+    var list = h('div', { class: 'exam-summary__list' });
+    EXAM.exercises.forEach(function (e, i) {
+      var a = examState.answers[i] || {};
+      list.appendChild(h('div', { class: 'exam-summary__row' + (a.passed ? ' is-ok' : '') }, [
+        h('span', {}, a.passed ? '✅' : '⬜'),
+        h('span', {}, e.title),
+        h('span', {}, a.passed ? (a.steps + ' casillas') : 'sin meta')
+      ]));
+    });
+    card.appendChild(list);
+    card.appendChild(h('div', { class: 'exam-actions' }, [
+      btn('Repetir evaluación', 'btn--soft', restartExam),
+      btn('Volver al inicio', 'btn--primary', function () { showView('home'); renderHome(); })
+    ]));
+    host.appendChild(card);
+  }
+
+  /* ==================================================================
      DICCIONARIO DE SENTENCIAS (LENGUAJE COMÚN vs PYTHON)
      ================================================================== */
   var SENTENCE_DICTIONARY = [
@@ -3125,6 +3409,13 @@
     }
     if (key === 'progreso') { renderProgress(); showView('progress'); return true; }
     if (key === 'teoria' || key === 'theory') { renderTheory(); showView('theory'); return true; }
+    if (key === 'evaluacion' || key === 'eval' || key === 'exam') {
+      var examIndex = parts[1] === 'final'
+        ? (EXAM ? EXAM.exercises.length : 0)
+        : (parseInt(parts[1], 10) || 1) - 1;
+      openExam(examIndex);
+      return true;
+    }
     if (key === 'diccionario' || key === 'dict') { renderDict(); showView('dict'); return true; }
     if (key === 'repaso' || key === 'quiz') { renderQuiz(); showView('quiz'); return true; }
     if (key === 'libre') { openFreePlay(); return true; }

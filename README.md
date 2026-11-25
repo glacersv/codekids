@@ -23,6 +23,11 @@ Además de las lecciones y los retos, incluye:
   con un error puesto a propósito) y `3 · Crea` (pantalla en blanco).
 - **Estudio Chispa** (`#/studio`): editor propio con plantillas, guardado local
   de hasta 8 programas, exportación `.py` y enlaces para compartir.
+- **Evaluación «La ruta de Chispa»** (`#/evaluacion`): 4 ejercicios en tableros
+  de 10 × 10. El alumno escribe todo en un editor de texto (sin bloques, sin
+  pistas, sin botones de ayuda); al ejecutar, las flechas dibujan el recorrido
+  de Chispa hasta la bandera. El resultado (aciertos, casillas recorridas y
+  código) se guarda en el navegador con la clave `codekids.exam.v1`.
 - **Apoyos de atención**: barra AHORA / DESPUÉS, temporizador visual de 10
   minutos, modo calma y sonido apagado por defecto.
 
@@ -91,6 +96,16 @@ RESULTADO: 475 bien, 0 mal
 Si dice `0 mal`, la ruta está sana. Si agregaste contenido, el número de
 aserciones va a subir; lo importante es que siga diciendo `0 mal`.
 
+### Evaluación de código
+
+```bash
+node tools/test-exam.js
+```
+
+Comprueba los 4 tableros de 10 × 10, que cada código de referencia se pueda
+digitar y que Chispa recoja todas las estrellas y llegue a la meta. Al terminar
+imprime un resumen como `RESULTADO: 90 bien, 0 mal`.
+
 ### Modo Aventura
 
 ```bash
@@ -135,11 +150,13 @@ codekids/
 │   ├── engine.js           # motor: ejecuta órdenes y decide si gana/choca
 │   ├── missions.js         # los retos (cuadrículas, paletas, soluciones)
 │   ├── lessons.js          # las lecciones (Lee → Ejemplo → Retos)
+│   ├── exam.js             # evaluación: 4 tableros de 10x10 y soluciones de referencia
 │   ├── quest.js            # motor del Modo Aventura (sensores, acciones, 8 mundos)
 │   ├── quest-fx.js         # capa visual Canvas 2D: tint, partículas, rim, viñeta
 │   └── quest-app.js        # interfaz 2D: héroe por partes, reglas y Canvas
 ├── tools/
 │   ├── test-missions.js    # pruebas de contenido (node)
+│   ├── test-exam.js        # pruebas de la evaluación de 4 ejercicios (node)
 │   ├── test-quest.js       # pruebas de los 8 mundos (node)
 │   └── browser-check.mjs   # prueba de humo en Chrome
 ├── docs/
@@ -151,7 +168,8 @@ codekids/
 
 Las pantallas se cambian por la URL con `#`. Ejemplos ya disponibles:
 `#/aventura`, `#/aventura/q1` … `#/aventura/q8`, `#/reto/m1`, `#/reto/py1`,
-`#/reto/py4`, `#/reto/space1`, `#/libre` y `#/studio`. Podés pegarlas directamente
+`#/reto/py4`, `#/reto/space1`, `#/evaluacion/1` … `#/evaluacion/4`,
+`#/evaluacion/final`, `#/libre` y `#/studio`. Podés pegarlas directamente
 en la barra del navegador para proyectar una pantalla concreta. Los enlaces
 compartidos desde el Estudio tienen el formato `#/studio/<código-en-base64>` y se
 abren solos.
@@ -205,6 +223,35 @@ El motor `quest.js` sigue siendo el dueño de las reglas: la capa sólo dibuja.
 Si el archivo no se carga, el tablero se pinta igual que antes. Con el **Modo
 calma** activo (valor por defecto) hay menos partículas, van más despacio y no
 hay sacudidas ni destellos fuertes.
+
+---
+
+## Evaluación · La ruta de Chispa
+
+Se abre desde el botón «📝 Evaluación · La ruta de Chispa» del inicio o con
+`#/evaluacion/1` (también se puede saltar a `#/evaluacion/4` o al resumen con
+`#/evaluacion/final`). Son 4 ejercicios, todos en cuadrículas de 10 columnas
+por 10 filas:
+
+| Ejercicio | Idea que mide |
+|---|---|
+| 1 · Línea recta | Secuencia de órdenes escritas |
+| 2 · La esquina | Giros y bucles `for i in range(n):` |
+| 3 · El pasillo escondido | Ruta con paredes y varios giros |
+| 4 · Vuelta a la plaza | Ruta larga con cinco estrellas |
+
+En cada ejercicio hay un solo `textarea`: no hay paleta de bloques, botones de
+atajo, pistas, modo paso a paso ni predicción. Al ejecutar, Chispa recorre el
+tablero y deja una flecha en cada casilla visitada; al llegar a la bandera con
+todas las estrellas, la meta se ilumina y el panel dice cuántas casillas se
+recorrieron. Si choca o se queda corta, el panel lo explica sin dar la
+solución. El botón «Siguiente ejercicio» guarda el código y el resultado; al
+final se muestra el puntaje sobre 4.
+
+Los ejercicios y sus respuestas de referencia viven en `js/exam.js`. El código
+que acepta el editor es el mismo Python-like de los retos:
+`chispa.avanzar()`, `chispa.girar_izquierda()`, `chispa.girar_derecha()`,
+`for i in range(n):` e `if chispa.hay_pared():`.
 
 ---
 
